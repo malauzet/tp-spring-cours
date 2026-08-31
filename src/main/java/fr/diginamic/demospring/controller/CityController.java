@@ -31,7 +31,7 @@ public class CityController {
         boolean added = cityService.addCity(city);
 
         if (!added) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("City already exists");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("The city '" + city.getName() + "' already exists.");
         }
 
         return ResponseEntity.ok("City inserted successfully");
