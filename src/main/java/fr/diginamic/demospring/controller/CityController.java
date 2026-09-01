@@ -1,5 +1,6 @@
 package fr.diginamic.demospring.controller;
 
+import fr.diginamic.demospring.exception.CityException;
 import fr.diginamic.demospring.model.City;
 import fr.diginamic.demospring.service.CityService;
 import org.springframework.http.HttpStatus;
@@ -32,8 +33,23 @@ public class CityController {
         return city.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
+    @GetMapping("/search/startswith/{prefix}")
+    public List<City> searchByNameStartingWith(@PathVariable String prefix) throws CityException {
+        return cityService.searchByNameStartingWith(prefix);
+    }
+
+    @GetMapping("/search/population/greater/{min}")
+    public List<City> searchByPopulationGreaterThan(@PathVariable int min) throws CityException {
+        return cityService.searchByPopulationGreaterThan(min);
+    }
+
+    @GetMapping("/search/population/between/{min}/{max}")
+    public List<City> searchByPopulationBetween(@PathVariable int min, @PathVariable int max) throws CityException {
+        return cityService.searchByPopulationBetween(min, max);
+    }
+
     @PostMapping
-    public ResponseEntity<String> addCity(@RequestBody City city) {
+    public ResponseEntity<String> addCity(@RequestBody City city) throws CityException {
 
         boolean added = cityService.addCity(city);
 
@@ -45,7 +61,7 @@ public class CityController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateCity(@PathVariable int id, @RequestBody City city) {
+    public ResponseEntity<String> updateCity(@PathVariable int id, @RequestBody City city) throws CityException {
 
         boolean updated = cityService.updateCity(id, city);
 

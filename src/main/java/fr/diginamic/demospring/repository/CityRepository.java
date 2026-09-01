@@ -7,6 +7,7 @@ import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Repository
 public class CityRepository {
@@ -42,5 +43,23 @@ public class CityRepository {
 
     public boolean deleteById(int id) {
         return cities.removeIf(c -> c.getId() == id);
+    }
+
+    public List<City> findByNameStartingWith(String prefix) {
+        return cities.stream()
+                .filter(c -> c.getName().toLowerCase().startsWith(prefix.toLowerCase()))
+                .collect(Collectors.toList());
+    }
+
+    public List<City> findByPopulationGreaterThan(int min) {
+        return cities.stream()
+                .filter(c -> c.getPopulation() > min)
+                .collect(Collectors.toList());
+    }
+
+    public List<City> findByPopulationBetween(int min, int max) {
+        return cities.stream()
+                .filter(c -> c.getPopulation() > min && c.getPopulation() < max)
+                .collect(Collectors.toList());
     }
 }
