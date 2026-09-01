@@ -1,9 +1,18 @@
 package fr.diginamic.demospring.model;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
 public class City {
 
     private Integer id;
+
+    @NotNull(message = "City name cannot be null.")
+    @Size(min = 2, message = "City name must contain at least 2 letters.")
     private String name;
+
+    @Min(value = 1, message = "City population must be at least 1 inhabitant.")
     private int population;
 
     public City() {

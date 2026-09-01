@@ -25,21 +25,21 @@ public class CityService {
         return cityRepository.findById(id);
     }
 
-    private void validateCity(City city) throws CityException {
-
-        if (city.getPopulation() < 10) {
-            throw new CityException("City population must be at least 10 inhabitants");
-        }
-
-        long letterCount = city.getName().chars().filter(Character::isLetter).count();
-        if (letterCount < 2) {
-            throw new CityException("City name must contain at least 2 letters");
-        }
-    }
+//    private void validateCity(City city) throws CityException {
+//
+//        if (city.getPopulation() < 10) {
+//            throw new CityException("City population must be at least 10 inhabitants.");
+//        }
+//
+//        long letterCount = city.getName().chars().filter(Character::isLetter).count();
+//        if (letterCount < 2) {
+//            throw new CityException("City name must contain at least 2 letters.");
+//        }
+//    }
 
     public boolean addCity(City city) throws CityException {
 
-        validateCity(city);
+        //validateCity(city);
 
         if (cityRepository.existsByName(city.getName())) {
             return false;
@@ -51,7 +51,7 @@ public class CityService {
 
     public boolean updateCity(int id, City newData) throws CityException {
 
-        validateCity(newData);
+        //validateCity(newData);
 
         Optional<City> existing = cityRepository.findById(id);
 

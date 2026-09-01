@@ -3,8 +3,10 @@ package fr.diginamic.demospring.controller;
 import fr.diginamic.demospring.exception.CityException;
 import fr.diginamic.demospring.model.City;
 import fr.diginamic.demospring.service.CityService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -49,7 +51,11 @@ public class CityController {
     }
 
     @PostMapping
-    public ResponseEntity<String> addCity(@RequestBody City city) throws CityException {
+    public ResponseEntity<String> addCity(@Valid @RequestBody City city, BindingResult result) throws CityException {
+
+        if (result.hasErrors()){
+            throw new CityException(result.getFieldErrors().getFirst().getDefaultMessage());
+        }
 
         boolean added = cityService.addCity(city);
 
@@ -61,7 +67,11 @@ public class CityController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateCity(@PathVariable int id, @RequestBody City city) throws CityException {
+    public ResponseEntity<String> updateCity(@PathVariable int id, @Valid @RequestBody City city, BindingResult result) throws CityException {
+
+        if (result.hasErrors()){
+            throw new CityException(result.getFieldErrors().getFirst().getDefaultMessage());
+        }
 
         boolean updated = cityService.updateCity(id, city);
 
