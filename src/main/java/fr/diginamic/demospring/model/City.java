@@ -1,11 +1,15 @@
 package fr.diginamic.demospring.model;
 
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+@Entity
 public class City {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @NotNull(message = "City name cannot be null.")
@@ -14,6 +18,9 @@ public class City {
 
     @Min(value = 1, message = "City population must be at least 1 inhabitant.")
     private int population;
+
+    @ManyToOne
+    private Department department;
 
     public City() {
     }
@@ -46,5 +53,13 @@ public class City {
 
     public void setPopulation(int population) {
         this.population = population;
+    }
+
+    public Department getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(Department department) {
+        this.department = department;
     }
 }

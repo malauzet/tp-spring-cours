@@ -35,6 +35,12 @@ public class CityController {
         return city.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
+    @GetMapping("/search/name/{name}")
+    public ResponseEntity<City> getCityByName(@PathVariable String name) {
+        Optional<City> city = cityService.getCityByName(name);
+        return city.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
+
     @GetMapping("/search/startswith/{prefix}")
     public List<City> searchByNameStartingWith(@PathVariable String prefix) throws CityException {
         return cityService.searchByNameStartingWith(prefix);
@@ -51,46 +57,31 @@ public class CityController {
     }
 
     @PostMapping
-    public ResponseEntity<String> addCity(@Valid @RequestBody City city, BindingResult result) throws CityException {
+    public ResponseEntity<List<City>> addCity(@Valid @RequestBody City city, BindingResult result) throws CityException {
 
         if (result.hasErrors()){
             throw new CityException(result.getFieldErrors().getFirst().getDefaultMessage());
         }
 
-        boolean added = cityService.addCity(city);
-
-        if (!added) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("The city '" + city.getName() + "' already exists.");
-        }
-
-        return ResponseEntity.ok("City inserted successfully");
+        List<City> cities = cityService.addCity(city);
+        return ResponseEntity.ok(cities);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateCity(@PathVariable int id, @Valid @RequestBody City city, BindingResult result) throws CityException {
+    public ResponseEntity<List<City>> updateCity(@PathVariable int id, @Valid @RequestBody City city, BindingResult result) throws CityException {
 
-        if (result.hasErrors()){
+        if (result.hasErrors()) {
             throw new CityException(result.getFieldErrors().getFirst().getDefaultMessage());
         }
 
-        boolean updated = cityService.updateCity(id, city);
-
-        if (!updated) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("City with id " + id + " not found");
-        }
-
-        return ResponseEntity.ok("City updated successfully");
+        List<City> cities = cityService.updateCity(id, city);
+        return ResponseEntity.ok(cities);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteCity(@PathVariable int id) {
+    public ResponseEntity<List<City>> deleteCity(@PathVariable int id) throws CityException {
 
-        boolean deleted = cityService.deleteCity(id);
-
-        if (!deleted) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("City with id " + id + " not found");
-        }
-
-        return ResponseEntity.ok("City deleted successfully");
+        List<City> cities = cityService.deleteCity(id);
+        return ResponseEntity.ok(cities);
     }
 }
