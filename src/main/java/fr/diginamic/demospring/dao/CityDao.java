@@ -80,4 +80,26 @@ public class CityDao {
         query.setParameter("max", max);
         return query.getResultList();
     }
+
+    public List<City> findTopByDepartmentOrderByPopulationDesc(int departmentId, int limit) {
+        TypedQuery<City> query = entityManager.createQuery("SELECT c " +
+                "FROM City c " +
+                "WHERE c.department.id = :departmentId " +
+                "ORDER BY c.population DESC",  City.class);
+        query.setParameter("departmentId", departmentId);
+        query.setMaxResults(limit);
+        return query.getResultList();
+    }
+
+    public List<City> findByDepartmentAndPopulationBetween(int departmentId, int min, int max) {
+        TypedQuery<City> query = entityManager.createQuery("SELECT c " +
+                "FROM City c " +
+                "WHERE c.department.id = :departmentId " +
+                "AND c.population > :min " +
+                "AND c.population < :max", City.class);
+        query.setParameter("departmentId", departmentId);
+        query.setParameter("min", min);
+        query.setParameter("max", max);
+        return query.getResultList();
+    }
 }

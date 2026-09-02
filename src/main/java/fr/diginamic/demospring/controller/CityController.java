@@ -1,7 +1,7 @@
 package fr.diginamic.demospring.controller;
 
+import fr.diginamic.demospring.dto.CityDto;
 import fr.diginamic.demospring.exception.CityException;
-import fr.diginamic.demospring.model.City;
 import fr.diginamic.demospring.service.CityService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -23,65 +23,78 @@ public class CityController {
     }
 
     @GetMapping
-    public List<City> getCities() {
+    public List<CityDto> getCities() {
         return cityService.getCities();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<City> getCityById(@PathVariable int id) {
+    public ResponseEntity<CityDto> getCityById(@PathVariable int id) {
 
-        Optional<City> city = cityService.getCityById(id);
+        Optional<CityDto> city = cityService.getCityById(id);
 
         return city.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
     @GetMapping("/search/name/{name}")
-    public ResponseEntity<City> getCityByName(@PathVariable String name) {
-        Optional<City> city = cityService.getCityByName(name);
+    public ResponseEntity<CityDto> getCityByName(@PathVariable String name) {
+        Optional<CityDto> city = cityService.getCityByName(name);
         return city.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
     @GetMapping("/search/startswith/{prefix}")
-    public List<City> searchByNameStartingWith(@PathVariable String prefix) throws CityException {
+    public List<CityDto> searchByNameStartingWith(@PathVariable String prefix) throws CityException {
         return cityService.searchByNameStartingWith(prefix);
     }
 
     @GetMapping("/search/population/greater/{min}")
-    public List<City> searchByPopulationGreaterThan(@PathVariable int min) throws CityException {
+    public List<CityDto> searchByPopulationGreaterThan(@PathVariable int min) throws CityException {
         return cityService.searchByPopulationGreaterThan(min);
     }
 
     @GetMapping("/search/population/between/{min}/{max}")
-    public List<City> searchByPopulationBetween(@PathVariable int min, @PathVariable int max) throws CityException {
+    public List<CityDto> searchByPopulationBetween(@PathVariable int min, @PathVariable int max) throws CityException {
         return cityService.searchByPopulationBetween(min, max);
     }
 
+    @GetMapping("/search/department/{departmentId}/largest/{n}")
+    public List<CityDto> getLargestCitiesOfDepartment(@PathVariable int departmentId,
+                                                      @PathVariable int n) throws CityException {
+        return cityService.getLargestCitiesOfDepartment(departmentId, n);
+    }
+
+    @GetMapping("/search/department/{departmentId}/population/between/{min}/{max}")
+    public List<CityDto> searchByPopulationBetweenInDepartment(@PathVariable int departmentId,
+                                                               @PathVariable int min,
+                                                               @PathVariable int max) throws CityException {
+        return cityService.searchByPopulationBetweenInDepartment(departmentId, min, max);
+    }
+
     @PostMapping
-    public ResponseEntity<List<City>> addCity(@Valid @RequestBody City city, BindingResult result) throws CityException {
+    public ResponseEntity<List<CityDto>> addCity(@Valid @RequestBody CityDto city, BindingResult result) throws CityException {
 
         if (result.hasErrors()){
             throw new CityException(result.getFieldErrors().getFirst().getDefaultMessage());
         }
 
-        List<City> cities = cityService.addCity(city);
+        List<CityDto> cities = cityService.addCity(city);
         return ResponseEntity.ok(cities);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<List<City>> updateCity(@PathVariable int id, @Valid @RequestBody City city, BindingResult result) throws CityException {
+    public ResponseEntity<List<CityDto>> updateCity(@PathVariable int id, @Valid @RequestBody CityDto city, BindingResult result) throws CityException {
 
         if (result.hasErrors()) {
             throw new CityException(result.getFieldErrors().getFirst().getDefaultMessage());
         }
 
-        List<City> cities = cityService.updateCity(id, city);
+        List<CityDto> cities = cityService.updateCity(id, city);
         return ResponseEntity.ok(cities);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<List<City>> deleteCity(@PathVariable int id) throws CityException {
+    public ResponseEntity<List<CityDto>> deleteCity(@PathVariable int id) throws CityException {
 
-        List<City> cities = cityService.deleteCity(id);
+        List<CityDto> cities = cityService.deleteCity(id);
         return ResponseEntity.ok(cities);
     }
 }
