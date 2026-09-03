@@ -1,6 +1,7 @@
 package fr.diginamic.demospring.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,7 +110,7 @@ public class GlobalExceptionHandler {
         // Each constraint carries its own contextual message, so the
         // "method.param" property path is redundant noise here.
         String message = ex.getConstraintViolations().stream()
-                .map(jakarta.validation.ConstraintViolation::getMessage)
+                .map(ConstraintViolation::getMessage)
                 .collect(Collectors.joining("; "));
         return build(HttpStatus.BAD_REQUEST, message.isEmpty() ? "Constraint violation." : message, req);
     }

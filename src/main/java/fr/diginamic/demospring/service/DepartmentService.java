@@ -137,8 +137,7 @@ public class DepartmentService {
 
             // TP requirement: an unknown code is not an error — create the
             // department on the fly and attach the city to it.
-            Department department = new Department();
-            department.setCode(departmentCode);
+            Department department = new Department(departmentCode, null);
             departmentRepository.save(department);
             return department;
         }

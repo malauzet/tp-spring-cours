@@ -66,14 +66,15 @@ public class CityDto {
     /**
      * Builds a bare entity from this DTO.
      *
-     * <p>The department is <em>not</em> resolved here; callers must attach it via
+     * <p>The {@code id} is intentionally not copied: this method is used on
+     * creation only, and the key is assigned by {@code @GeneratedValue}. The
+     * department is <em>not</em> resolved here either; callers must attach it via
      * {@link City#setDepartment}.</p>
      *
-     * @return a new {@link City} carrying the id, name and population of this DTO
+     * @return a new {@link City} carrying the name and population of this DTO
      */
     public City toEntity() {
         City city = new City();
-        city.setId(this.id);
         city.setName(this.name);
         city.setPopulation(this.population);
         return city;

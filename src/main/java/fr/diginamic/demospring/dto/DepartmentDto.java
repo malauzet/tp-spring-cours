@@ -44,11 +44,13 @@ public class DepartmentDto {
     /**
      * Builds an entity from this DTO.
      *
-     * @return a new {@link Department} carrying the id, code and name of this DTO
+     * <p>The {@code id} is intentionally not copied: this method is used on
+     * creation only, and the key is assigned by {@code @GeneratedValue}.</p>
+     *
+     * @return a new {@link Department} carrying the code and name of this DTO
      */
     public Department toEntity() {
         Department department = new Department();
-        department.setId(this.id);
         department.setCode(this.code);
         department.setName(this.name);
         return department;
