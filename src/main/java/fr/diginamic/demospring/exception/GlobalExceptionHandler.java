@@ -106,8 +106,10 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiError> handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest req) {
+        // Each constraint carries its own contextual message, so the
+        // "method.param" property path is redundant noise here.
         String message = ex.getConstraintViolations().stream()
-                .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
+                .map(jakarta.validation.ConstraintViolation::getMessage)
                 .collect(Collectors.joining("; "));
         return build(HttpStatus.BAD_REQUEST, message.isEmpty() ? "Constraint violation." : message, req);
     }

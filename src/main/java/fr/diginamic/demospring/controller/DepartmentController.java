@@ -59,7 +59,8 @@ public class DepartmentController {
             @ApiResponse(responseCode = "200", description = "Department found"),
             @ApiResponse(responseCode = "404", description = "No department with this id")
     })
-    public DepartmentDto getDepartmentById(@Parameter(description = "Department id") @PathVariable @Positive int id) throws NotFoundException {
+    public DepartmentDto getDepartmentById(@Parameter(description = "Department id") @PathVariable
+            @Positive(message = "Department id must be a positive number.") int id) throws NotFoundException {
         return departmentService.getDepartmentById(id)
                 .orElseThrow(() -> new NotFoundException("Department with id " + id + " not found"));
     }
@@ -97,7 +98,8 @@ public class DepartmentController {
             @ApiResponse(responseCode = "400", description = "Invalid payload"),
             @ApiResponse(responseCode = "404", description = "No department with this id")
     })
-    public DepartmentDto updateDepartment(@Parameter(description = "Department id") @PathVariable @Positive int id,
+    public DepartmentDto updateDepartment(@Parameter(description = "Department id") @PathVariable
+            @Positive(message = "Department id must be a positive number.") int id,
                                           @Valid @RequestBody DepartmentDto department)
             throws NotFoundException {
         return departmentService.updateDepartment(id, department);
@@ -116,7 +118,8 @@ public class DepartmentController {
             @ApiResponse(responseCode = "204", description = "Department deleted"),
             @ApiResponse(responseCode = "404", description = "No department with this id")
     })
-    public void deleteDepartment(@Parameter(description = "Department id") @PathVariable @Positive int id) throws NotFoundException {
+    public void deleteDepartment(@Parameter(description = "Department id") @PathVariable
+            @Positive(message = "Department id must be a positive number.") int id) throws NotFoundException {
         departmentService.deleteDepartment(id);
     }
 }

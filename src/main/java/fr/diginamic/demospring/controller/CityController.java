@@ -13,8 +13,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -49,13 +49,15 @@ public class CityController {
     /**
      * @param page zero-based page index
      * @param size page size (at least 1)
-     * @return the requested page of cities
+     * @return the requested page of cities, wrapped in a stable pagination envelope
      */
     @GetMapping
     @Operation(summary = "List all cities (paginated)")
-    public Page<CityDto> getCities(@RequestParam(defaultValue = "0") @Min(0) int page,
-                                   @RequestParam(defaultValue = "20") @Min(1) int size) {
-        return cityService.getCities(PageRequest.of(page, size));
+    public PagedModel<CityDto> getCities(@RequestParam(defaultValue = "0")
+                                         @Min(value = 0, message = "Page index must not be negative.") int page,
+                                         @RequestParam(defaultValue = "20")
+                                         @Min(value = 1, message = "Page size must be at least 1.") int size) {
+        return new PagedModel<>(cityService.getCities(PageRequest.of(page, size)));
     }
 
     /**
@@ -69,7 +71,8 @@ public class CityController {
             @ApiResponse(responseCode = "200", description = "City found"),
             @ApiResponse(responseCode = "404", description = "No city with this id")
     })
-    public CityDto getCityById(@Parameter(description = "City id") @PathVariable @Positive int id) throws NotFoundException {
+    public CityDto getCityById(@Parameter(description = "City id") @PathVariable
+                               @Positive(message = "City id must be a positive number.") int id) throws NotFoundException {
         return cityService.getCityById(id)
                 .orElseThrow(() -> new NotFoundException("City with id " + id + " not found"));
     }
@@ -108,7 +111,8 @@ public class CityController {
     @GetMapping("/search/population/greater/{min}")
     @Operation(summary = "List cities with a population greater than a threshold")
     @ApiResponse(responseCode = "200", description = "Matching cities (empty list if none matched)")
-    public List<CityDto> searchByPopulationGreaterThan(@Parameter(description = "Exclusive lower bound") @PathVariable @PositiveOrZero int min) {
+    public List<CityDto> searchByPopulationGreaterThan(@Parameter(description = "Exclusive lower bound") @PathVariable
+                                                       @PositiveOrZero(message = "Population must not be negative.") int min) {
         return cityService.searchByPopulationGreaterThan(min);
     }
 
@@ -121,8 +125,10 @@ public class CityController {
     @GetMapping("/search/population/between/{min}/{max}")
     @Operation(summary = "List cities with a population within a range")
     @ApiResponse(responseCode = "200", description = "Matching cities (empty list if none matched)")
-    public List<CityDto> searchByPopulationBetween(@Parameter(description = "Exclusive lower bound") @PathVariable @PositiveOrZero int min,
-                                                   @Parameter(description = "Exclusive upper bound") @PathVariable @PositiveOrZero int max) {
+    public List<CityDto> searchByPopulationBetween(@Parameter(description = "Exclusive lower bound") @PathVariable
+                                                   @PositiveOrZero(message = "Population must not be negative.") int min,
+                                                   @Parameter(description = "Exclusive upper bound") @PathVariable
+                                                   @PositiveOrZero(message = "Population must not be negative.") int max) {
         return cityService.searchByPopulationBetween(min, max);
     }
 
@@ -135,8 +141,10 @@ public class CityController {
     @GetMapping("/search/department/{departmentId}/largest/{n}")
     @Operation(summary = "List the N most populated cities of a department")
     @ApiResponse(responseCode = "200", description = "Matching cities (empty list if the department has no city)")
-    public List<CityDto> getLargestCitiesOfDepartment(@Parameter(description = "Department id") @PathVariable @Positive int departmentId,
-                                                      @Parameter(description = "Maximum number of cities") @PathVariable @Positive int n) {
+    public List<CityDto> getLargestCitiesOfDepartment(@Parameter(description = "Department id") @PathVariable
+                                                      @Positive(message = "Department id must be a positive number.") int departmentId,
+                                                      @Parameter(description = "Maximum number of cities") @PathVariable
+                                                      @Positive(message = "The number of cities to return must be at least 1.") int n) {
         return cityService.getLargestCitiesOfDepartment(departmentId, n);
     }
 
@@ -149,9 +157,12 @@ public class CityController {
     @GetMapping("/search/department/{departmentId}/population/between/{min}/{max}")
     @Operation(summary = "List cities of a department with a population within a range")
     @ApiResponse(responseCode = "200", description = "Matching cities (empty list if none matched)")
-    public List<CityDto> searchByPopulationBetweenInDepartment(@Parameter(description = "Department id") @PathVariable @Positive int departmentId,
-                                                               @Parameter(description = "Exclusive lower bound") @PathVariable @PositiveOrZero int min,
-                                                               @Parameter(description = "Exclusive upper bound") @PathVariable @PositiveOrZero int max) {
+    public List<CityDto> searchByPopulationBetweenInDepartment(@Parameter(description = "Department id") @PathVariable
+                                                               @Positive(message = "Department id must be a positive number.") int departmentId,
+                                                               @Parameter(description = "Exclusive lower bound") @PathVariable
+                                                               @PositiveOrZero(message = "Population must not be negative.") int min,
+                                                               @Parameter(description = "Exclusive upper bound") @PathVariable
+                                                               @PositiveOrZero(message = "Population must not be negative.") int max) {
         return cityService.searchByPopulationBetweenInDepartment(departmentId, min, max);
     }
 
@@ -164,8 +175,10 @@ public class CityController {
     @GetMapping("/search/department/{departmentId}/population/greater/{min}")
     @Operation(summary = "List cities of a department with a population greater than a threshold")
     @ApiResponse(responseCode = "200", description = "Matching cities (empty list if none matched)")
-    public List<CityDto> searchByPopulationGreaterThanInDepartment(@Parameter(description = "Department id") @PathVariable @Positive int departmentId,
-                                                                   @Parameter(description = "Exclusive lower bound") @PathVariable @PositiveOrZero int min) {
+    public List<CityDto> searchByPopulationGreaterThanInDepartment(@Parameter(description = "Department id") @PathVariable
+                                                                   @Positive(message = "Department id must be a positive number.") int departmentId,
+                                                                   @Parameter(description = "Exclusive lower bound") @PathVariable
+                                                                   @PositiveOrZero(message = "Population must not be negative.") int min) {
         return cityService.searchByPopulationGreaterThanInDepartment(departmentId, min);
     }
 
@@ -193,8 +206,8 @@ public class CityController {
      * @param id   id of the city to update
      * @param city new values; a department id or code is mandatory
      * @return the updated city
-     * @throws FunctionalException     if the department cannot be resolved or the name clashes
-     * @throws NotFoundException if no city has this id
+     * @throws FunctionalException if the department cannot be resolved or the name clashes
+     * @throws NotFoundException   if no city has this id
      */
     @PutMapping("/{id}")
     @Operation(summary = "Update a city")
@@ -203,7 +216,8 @@ public class CityController {
             @ApiResponse(responseCode = "400", description = "Invalid payload, unresolved department or duplicate city"),
             @ApiResponse(responseCode = "404", description = "No city with this id")
     })
-    public CityDto updateCity(@Parameter(description = "City id") @PathVariable @Positive int id,
+    public CityDto updateCity(@Parameter(description = "City id") @PathVariable
+                              @Positive(message = "City id must be a positive number.") int id,
                               @Valid @RequestBody CityDto city)
             throws FunctionalException, NotFoundException {
         return cityService.updateCity(id, city);
@@ -222,7 +236,8 @@ public class CityController {
             @ApiResponse(responseCode = "204", description = "City deleted"),
             @ApiResponse(responseCode = "404", description = "No city with this id")
     })
-    public void deleteCity(@Parameter(description = "City id") @PathVariable @Positive int id) throws NotFoundException {
+    public void deleteCity(@Parameter(description = "City id") @PathVariable
+                           @Positive(message = "City id must be a positive number.") int id) throws NotFoundException {
         cityService.deleteCity(id);
     }
 }

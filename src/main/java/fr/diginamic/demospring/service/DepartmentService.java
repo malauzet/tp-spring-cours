@@ -117,6 +117,8 @@ public class DepartmentService {
      * @return the resolved (possibly newly created) managed entity
      * @throws FunctionalException if neither a known id nor a code is available
      */
+    // @Transactional: needed here — when called from a read-only context this
+    // flips the transaction to read-write so step 3 (department creation) can persist.
     @Transactional
     public Department resolve(Integer departmentId, String departmentCode) throws FunctionalException {
 
@@ -133,6 +135,8 @@ public class DepartmentService {
                 return byCode.get();
             }
 
+            // TP requirement: an unknown code is not an error — create the
+            // department on the fly and attach the city to it.
             Department department = new Department();
             department.setCode(departmentCode);
             departmentRepository.save(department);

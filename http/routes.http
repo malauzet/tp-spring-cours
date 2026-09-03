@@ -85,6 +85,7 @@ GET {{host}}/departments/0
 ### ─────────────────────────────────────────────
 
 ### [12] List cities, paginated -> 200
+###      body: PagedModel -> { "content": [...], "page": { size, number, totalElements, totalPages } }
 GET {{host}}/cities?page=1&size=2
 
 ### [13] Get city by id -> 200 (Paris)
@@ -228,7 +229,7 @@ GET {{host}}/cities/-5
 ### [E5] id 0 -> 400 (@Positive)
 GET {{host}}/cities/0
 
-### [E6] page size 0 -> 400 (getCities.size: must be >= 1)
+### [E6] page size 0 -> 400 "Page size must be at least 1."
 GET {{host}}/cities?page=0&size=0
 
 ### [E7] negative page -> 400 (@Min(0))
@@ -237,13 +238,13 @@ GET {{host}}/cities?page=-1&size=5
 ### [E8] negative size -> 400 (@Min(1))
 GET {{host}}/cities?page=0&size=-3
 
-### [E9] page far beyond data -> 200, empty content
+### [E9] page far beyond data -> 200, "content": []
 GET {{host}}/cities?page=99999&size=5
 
 ### [E10] non-numeric page param -> 400
 GET {{host}}/cities?page=x&size=5
 
-### [E11] largest/0 -> 400 (@Positive on n)
+### [E11] largest/0 -> 400 "The number of cities to return must be at least 1."
 GET {{host}}/cities/search/department/48/largest/0
 
 ### [E12] largest/-1 -> 400

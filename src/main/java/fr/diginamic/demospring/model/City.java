@@ -27,7 +27,7 @@ public class City {
     private int population;
 
     /** Department this city belongs to. */
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_dept")
     private Department department;
 
@@ -36,16 +36,17 @@ public class City {
     }
 
     /**
-     * Convenience constructor.
+     * Convenience constructor for building a new (unsaved) city; the id is left
+     * for {@code @GeneratedValue} to assign.
      *
-     * @param id         primary key, may be {@code null} for a new city
      * @param name       city name
-     * @param population number of inhabitants
+     * @param population  number of inhabitants
+     * @param department  owning department
      */
-    public City(Integer id, String name, int population) {
-        this.id = id;
+    public City(String name, int population, Department department) {
         this.name = name;
         this.population = population;
+        this.department = department;
     }
 
     /** @return the primary key */

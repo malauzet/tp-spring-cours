@@ -1,6 +1,5 @@
 package fr.diginamic.demospring.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.List;
@@ -8,10 +7,9 @@ import java.util.List;
 /**
  * JPA entity representing a French department.
  *
- * <p>A department owns zero or more {@link City} instances. The {@code cities}
- * collection is marked {@link JsonIgnore} to break the bidirectional
- * serialization cycle; API responses use
- * {@link fr.diginamic.demospring.dto.DepartmentDto} instead.</p>
+ * <p>A department owns zero or more {@link City} instances. This class is the
+ * persistence model only; data exchanged with API clients goes through
+ * {@link fr.diginamic.demospring.dto.DepartmentDto}.</p>
  */
 @Entity
 @Table(name = "departement")
@@ -30,9 +28,8 @@ public class Department {
     @Column(name = "nom")
     private String name;
 
-    /** Cities belonging to this department; not serialized. */
+    /** Cities belonging to this department. */
     @OneToMany(mappedBy = "department")
-    @JsonIgnore
     private List<City> cities;
 
     /** Default constructor required by JPA. */
@@ -40,14 +37,13 @@ public class Department {
     }
 
     /**
-     * Convenience constructor.
+     * Convenience constructor for building a new (unsaved) department; the id is
+     * left for {@code @GeneratedValue} to assign.
      *
-     * @param id   primary key, may be {@code null} for a new department
      * @param code INSEE department code
      * @param name department name
      */
-    public Department(Integer id, String code, String name) {
-        this.id = id;
+    public Department(String code, String name) {
         this.code = code;
         this.name = name;
     }
