@@ -126,8 +126,8 @@ GET {{host}}/cities/search/department/99999/largest/5
 ### [25] Cities of a department, population between -> 200
 GET {{host}}/cities/search/department/48/population/between/40000/90000
 
-### [26] Cities of a department, population greater than (alt route) -> 200
-GET {{host}}/cities/department/48/population/greater-than/100000
+### [26] Cities of a department, population greater than -> 200
+GET {{host}}/cities/search/department/48/population/greater/100000
 
 
 ### ─────────────────────────────────────────────
@@ -268,7 +268,7 @@ GET {{host}}/cities/13321/
 POST {{host}}/cities
 Content-Type: application/json
 
-### [E19] Empty JSON object -> 400, both fields: "name: ... cannot be null.; population: ... at least 1 ..."
+### [E19] Empty JSON object -> 400, both fields: "name: City name is required.; population: City population is required."
 POST {{host}}/cities
 Content-Type: application/json
 
@@ -292,8 +292,7 @@ Content-Type: text/plain
 
 { "name": "Zpp", "population": 5, "departmentId": 1 }
 
-### [E23] name = "  " (two spaces) -> 201 CREATED  !! still weak (Tier-2 item 13):
-###       @Size(min=2) passes on whitespace, no @NotBlank / trim. Clean up after.
+### [E23] name = "  " (two spaces) -> 400 "name: City name is required." (@NotBlank)
 POST {{host}}/cities
 Content-Type: application/json
 
@@ -389,7 +388,7 @@ Content-Type: application/json
 
 { "name": "Zt", "population": true, "departmentId": 1 }
 
-### [T11] population = null -> 400 (cannot map null into primitive int)
+### [T11] population = null -> 400 "population: City population is required." (@NotNull)
 POST {{host}}/cities
 Content-Type: application/json
 

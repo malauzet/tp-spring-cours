@@ -1,7 +1,7 @@
 package fr.diginamic.demospring.controller;
 
 import fr.diginamic.demospring.dto.CityDto;
-import fr.diginamic.demospring.exception.CityException;
+import fr.diginamic.demospring.exception.FunctionalException;
 import fr.diginamic.demospring.exception.NotFoundException;
 import fr.diginamic.demospring.service.CityService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -161,7 +161,7 @@ public class CityController {
      * @return the cities of the department more populated than {@code min},
      *         ordered by descending population (empty list if none)
      */
-    @GetMapping("/department/{departmentId}/population/greater-than/{min}")
+    @GetMapping("/search/department/{departmentId}/population/greater/{min}")
     @Operation(summary = "List cities of a department with a population greater than a threshold")
     @ApiResponse(responseCode = "200", description = "Matching cities (empty list if none matched)")
     public List<CityDto> searchByPopulationGreaterThanInDepartment(@Parameter(description = "Department id") @PathVariable @Positive int departmentId,
@@ -174,7 +174,7 @@ public class CityController {
      *
      * @param city the city to create; a department id or code is mandatory
      * @return the created city
-     * @throws CityException if the department cannot be resolved or the city already exists
+     * @throws FunctionalException if the department cannot be resolved or the city already exists
      */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -183,7 +183,7 @@ public class CityController {
             @ApiResponse(responseCode = "201", description = "City created"),
             @ApiResponse(responseCode = "400", description = "Invalid payload, unresolved department or duplicate city")
     })
-    public CityDto addCity(@Valid @RequestBody CityDto city) throws CityException {
+    public CityDto addCity(@Valid @RequestBody CityDto city) throws FunctionalException {
         return cityService.addCity(city);
     }
 
@@ -193,7 +193,7 @@ public class CityController {
      * @param id   id of the city to update
      * @param city new values; a department id or code is mandatory
      * @return the updated city
-     * @throws CityException     if the department cannot be resolved or the name clashes
+     * @throws FunctionalException     if the department cannot be resolved or the name clashes
      * @throws NotFoundException if no city has this id
      */
     @PutMapping("/{id}")
@@ -205,7 +205,7 @@ public class CityController {
     })
     public CityDto updateCity(@Parameter(description = "City id") @PathVariable @Positive int id,
                               @Valid @RequestBody CityDto city)
-            throws CityException, NotFoundException {
+            throws FunctionalException, NotFoundException {
         return cityService.updateCity(id, city);
     }
 

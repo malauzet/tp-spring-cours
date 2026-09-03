@@ -1,7 +1,7 @@
 package fr.diginamic.demospring.service;
 
 import fr.diginamic.demospring.dto.DepartmentDto;
-import fr.diginamic.demospring.exception.CityException;
+import fr.diginamic.demospring.exception.FunctionalException;
 import fr.diginamic.demospring.exception.NotFoundException;
 import fr.diginamic.demospring.model.Department;
 import fr.diginamic.demospring.repository.DepartmentRepository;
@@ -17,8 +17,12 @@ import java.util.Optional;
  * <p>CRUD methods accept and return {@link DepartmentDto}. {@link #resolve} is the
  * exception: it returns the managed {@link Department} entity because
  * {@link CityService} needs it to set the foreign key on a city.</p>
+ *
+ * <p>The class is read-only by default; the mutating methods opt back into a
+ * writable transaction with their own {@link Transactional} annotation.</p>
  */
 @Service
+@Transactional(readOnly = true)
 public class DepartmentService {
 
     private final DepartmentRepository departmentRepository;
@@ -48,13 +52,13 @@ public class DepartmentService {
      *
      * @param department the department to create
      * @return the created department
-     * @throws CityException if a department with the same code already exists
+     * @throws FunctionalException if a department with the same code already exists
      */
     @Transactional
-    public DepartmentDto addDepartment(DepartmentDto department) throws CityException {
+    public DepartmentDto addDepartment(DepartmentDto department) throws FunctionalException {
 
         if (departmentRepository.existsByCodeIgnoreCase(department.getCode())) {
-            throw new CityException("The department '" + department.getCode() + "' already exists.");
+            throw new FunctionalException("The department '" + department.getCode() + "' already exists.");
         }
 
         return DepartmentDto.fromEntity(departmentRepository.save(department.toEntity()));
@@ -105,16 +109,16 @@ public class DepartmentService {
      *   <li>by {@code departmentCode} when provided and known;</li>
      *   <li>otherwise, when only an <em>unknown</em> code is given, a new
      *       department is created with that code;</li>
-     *   <li>otherwise a {@link CityException} is thrown.</li>
+     *   <li>otherwise a {@link FunctionalException} is thrown.</li>
      * </ol>
      *
      * @param departmentId   candidate department id, may be {@code null}
      * @param departmentCode candidate department code, may be {@code null} or blank
      * @return the resolved (possibly newly created) managed entity
-     * @throws CityException if neither a known id nor a code is available
+     * @throws FunctionalException if neither a known id nor a code is available
      */
     @Transactional
-    public Department resolve(Integer departmentId, String departmentCode) throws CityException {
+    public Department resolve(Integer departmentId, String departmentCode) throws FunctionalException {
 
         if (departmentId != null) {
             Optional<Department> byId = departmentRepository.findById(departmentId);
@@ -135,6 +139,6 @@ public class DepartmentService {
             return department;
         }
 
-        throw new CityException("Unknown department.");
+        throw new FunctionalException("Unknown department.");
     }
 }

@@ -2,8 +2,9 @@ package fr.diginamic.demospring.dto;
 
 import fr.diginamic.demospring.model.City;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -21,13 +22,14 @@ public class CityDto {
     private Integer id;
 
     @Schema(description = "City name.", example = "Lyon", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotBlank(message = "City name cannot be null.")
+    @NotBlank(message = "City name is required.")
     @Size(min = 2, message = "City name must contain at least 2 letters.")
     private String name;
 
-    @Schema(description = "Number of inhabitants.", example = "520000")
-    @Min(value = 1, message = "City population must be at least 1 inhabitant.")
-    private int population;
+    @Schema(description = "Number of inhabitants.", example = "520000", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotNull(message = "City population is required.")
+    @Positive(message = "City population must be at least 1 inhabitant.")
+    private Integer population;
 
     @Schema(description = "Id of the owning department. Provide this or 'departmentCode'.", example = "69")
     private Integer departmentId;
@@ -98,12 +100,12 @@ public class CityDto {
     }
 
     /** @return the number of inhabitants */
-    public int getPopulation() {
+    public Integer getPopulation() {
         return population;
     }
 
     /** @param population the number of inhabitants to set */
-    public void setPopulation(int population) {
+    public void setPopulation(Integer population) {
         this.population = population;
     }
 

@@ -1,7 +1,7 @@
 package fr.diginamic.demospring.controller;
 
 import fr.diginamic.demospring.dto.DepartmentDto;
-import fr.diginamic.demospring.exception.CityException;
+import fr.diginamic.demospring.exception.FunctionalException;
 import fr.diginamic.demospring.exception.NotFoundException;
 import fr.diginamic.demospring.service.DepartmentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -69,7 +69,7 @@ public class DepartmentController {
      *
      * @param department the department to create
      * @return the created department
-     * @throws CityException if a department with the same code already exists
+     * @throws FunctionalException if a department with the same code already exists
      */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -78,7 +78,7 @@ public class DepartmentController {
             @ApiResponse(responseCode = "201", description = "Department created"),
             @ApiResponse(responseCode = "400", description = "Invalid payload or duplicate code")
     })
-    public DepartmentDto addDepartment(@Valid @RequestBody DepartmentDto department) throws CityException {
+    public DepartmentDto addDepartment(@Valid @RequestBody DepartmentDto department) throws FunctionalException {
         return departmentService.addDepartment(department);
     }
 

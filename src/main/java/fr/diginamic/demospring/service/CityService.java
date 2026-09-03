@@ -1,7 +1,7 @@
 package fr.diginamic.demospring.service;
 
 import fr.diginamic.demospring.dto.CityDto;
-import fr.diginamic.demospring.exception.CityException;
+import fr.diginamic.demospring.exception.FunctionalException;
 import fr.diginamic.demospring.exception.NotFoundException;
 import fr.diginamic.demospring.model.City;
 import fr.diginamic.demospring.model.Department;
@@ -26,8 +26,12 @@ import java.util.Optional;
  * result" is not an error. Only single-resource lookups signal absence, and they
  * do so with an empty {@link Optional} that the controller turns into a
  * {@code 404}.</p>
+ *
+ * <p>The class is read-only by default; the mutating methods opt back into a
+ * writable transaction with their own {@link Transactional} annotation.</p>
  */
 @Service
+@Transactional(readOnly = true)
 public class CityService {
 
     private final CityRepository cityRepository;
@@ -71,16 +75,16 @@ public class CityService {
      *
      * @param city the city to create; must carry a department id or code
      * @return the created city
-     * @throws CityException if no department can be resolved, or a city with the
+     * @throws FunctionalException if no department can be resolved, or a city with the
      *                       same name already exists in that department
      */
     @Transactional
-    public CityDto addCity(CityDto city) throws CityException {
+    public CityDto addCity(CityDto city) throws FunctionalException {
 
         Department department = departmentService.resolve(city.getDepartmentId(), city.getDepartmentCode());
 
         if (cityRepository.existsByNameIgnoreCaseAndDepartmentId(city.getName(), department.getId())) {
-            throw new CityException("The city '" + city.getName() + "' already exists in this department.");
+            throw new FunctionalException("The city '" + city.getName() + "' already exists in this department.");
         }
 
         City entity = city.toEntity();
@@ -95,12 +99,12 @@ public class CityService {
      * @param id      id of the city to update
      * @param newData new values; must carry a department id or code
      * @return the updated city
-     * @throws CityException     if no department can be resolved, or another city
+     * @throws FunctionalException     if no department can be resolved, or another city
      *                           with the same name already exists in that department
      * @throws NotFoundException if no city has the given id
      */
     @Transactional
-    public CityDto updateCity(int id, CityDto newData) throws CityException, NotFoundException {
+    public CityDto updateCity(int id, CityDto newData) throws FunctionalException, NotFoundException {
 
         City city = cityRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("City with id " + id + " not found"));
@@ -108,7 +112,7 @@ public class CityService {
         Department department = departmentService.resolve(newData.getDepartmentId(), newData.getDepartmentCode());
 
         if (cityRepository.existsByNameIgnoreCaseAndDepartmentIdAndIdNot(newData.getName(), department.getId(), id)) {
-            throw new CityException("The city '" + newData.getName() + "' already exists in this department.");
+            throw new FunctionalException("The city '" + newData.getName() + "' already exists in this department.");
         }
 
         city.setName(newData.getName());

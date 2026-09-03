@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  *   <caption>Exception &rarr; status mapping</caption>
  *   <tr><th>Exception</th><th>Status</th></tr>
  *   <tr><td>{@link NotFoundException}, {@link NoResourceFoundException}</td><td>404</td></tr>
- *   <tr><td>{@link CityException}</td><td>400</td></tr>
+ *   <tr><td>{@link FunctionalException}</td><td>400</td></tr>
  *   <tr><td>{@link MethodArgumentNotValidException} (invalid {@code @RequestBody})</td><td>400</td></tr>
  *   <tr><td>{@link HandlerMethodValidationException}, {@link ConstraintViolationException}
  *           (invalid path/query parameter)</td><td>400</td></tr>
@@ -61,8 +61,8 @@ public class GlobalExceptionHandler {
      * @param req current request
      * @return {@code 400} with the exception message
      */
-    @ExceptionHandler(CityException.class)
-    public ResponseEntity<ApiError> handleCityException(CityException ex, HttpServletRequest req) {
+    @ExceptionHandler(FunctionalException.class)
+    public ResponseEntity<ApiError> handleFunctionalException(FunctionalException ex, HttpServletRequest req) {
         return build(HttpStatus.BAD_REQUEST, ex.getMessage(), req);
     }
 
