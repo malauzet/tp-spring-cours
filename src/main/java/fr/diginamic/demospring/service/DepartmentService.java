@@ -1,10 +1,10 @@
 package fr.diginamic.demospring.service;
 
-import fr.diginamic.demospring.dao.DepartmentDao;
 import fr.diginamic.demospring.dto.DepartmentDto;
 import fr.diginamic.demospring.exception.CityException;
 import fr.diginamic.demospring.exception.NotFoundException;
 import fr.diginamic.demospring.model.Department;
+import fr.diginamic.demospring.repository.DepartmentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,18 +21,18 @@ import java.util.Optional;
 @Service
 public class DepartmentService {
 
-    private final DepartmentDao departmentDao;
+    private final DepartmentRepository departmentRepository;
 
     /**
-     * @param departmentDao department data access object
+     * @param departmentRepository department data access object
      */
-    public DepartmentService(DepartmentDao departmentDao) {
-        this.departmentDao = departmentDao;
+    public DepartmentService(DepartmentRepository departmentRepository) {
+        this.departmentRepository = departmentRepository;
     }
 
     /** @return every department */
     public List<DepartmentDto> getDepartments() {
-        return departmentDao.findAll().stream().map(DepartmentDto::fromEntity).toList();
+        return departmentRepository.findAll().stream().map(DepartmentDto::fromEntity).toList();
     }
 
     /**
@@ -40,7 +40,7 @@ public class DepartmentService {
      * @return the department, or {@link Optional#empty()} if not found
      */
     public Optional<DepartmentDto> getDepartmentById(int id) {
-        return departmentDao.findById(id).map(DepartmentDto::fromEntity);
+        return departmentRepository.findById(id).map(DepartmentDto::fromEntity);
     }
 
     /**
@@ -53,12 +53,12 @@ public class DepartmentService {
     @Transactional
     public List<DepartmentDto> addDepartment(DepartmentDto department) throws CityException {
 
-        if (departmentDao.existsByCode(department.getCode())) {
+        if (departmentRepository.existsByCodeIgnoreCase(department.getCode())) {
             throw new CityException("The department '" + department.getCode() + "' already exists.");
         }
 
-        departmentDao.save(department.toEntity());
-        return departmentDao.findAll().stream().map(DepartmentDto::fromEntity).toList();
+        departmentRepository.save(department.toEntity());
+        return departmentRepository.findAll().stream().map(DepartmentDto::fromEntity).toList();
     }
 
     /**
@@ -72,7 +72,7 @@ public class DepartmentService {
     @Transactional
     public List<DepartmentDto> updateDepartment(int id, DepartmentDto newData) throws NotFoundException {
 
-        Optional<Department> existing = departmentDao.findById(id);
+        Optional<Department> existing = departmentRepository.findById(id);
 
         if (existing.isEmpty()) {
             throw new NotFoundException("Department with id " + id + " not found");
@@ -81,7 +81,7 @@ public class DepartmentService {
         Department department = existing.get();
         department.setCode(newData.getCode());
         department.setName(newData.getName());
-        return departmentDao.findAll().stream().map(DepartmentDto::fromEntity).toList();
+        return departmentRepository.findAll().stream().map(DepartmentDto::fromEntity).toList();
     }
 
     /**
@@ -94,13 +94,12 @@ public class DepartmentService {
     @Transactional
     public List<DepartmentDto> deleteDepartment(int id) throws NotFoundException {
 
-        boolean deleted = departmentDao.deleteById(id);
-
-        if (!deleted) {
+        if (!departmentRepository.existsById(id)) {
             throw new NotFoundException("Department with id " + id + " not found");
         }
 
-        return departmentDao.findAll().stream().map(DepartmentDto::fromEntity).toList();
+        departmentRepository.deleteById(id);
+        return departmentRepository.findAll().stream().map(DepartmentDto::fromEntity).toList();
     }
 
     /**
@@ -124,21 +123,21 @@ public class DepartmentService {
     public Department resolve(Integer departmentId, String departmentCode) throws CityException {
 
         if (departmentId != null) {
-            Optional<Department> byId = departmentDao.findById(departmentId);
+            Optional<Department> byId = departmentRepository.findById(departmentId);
             if (byId.isPresent()) {
                 return byId.get();
             }
         }
 
         if (departmentCode != null && !departmentCode.isBlank()) {
-            Optional<Department> byCode = departmentDao.findByCode(departmentCode);
+            Optional<Department> byCode = departmentRepository.findByCodeIgnoreCase(departmentCode);
             if (byCode.isPresent()) {
                 return byCode.get();
             }
 
             Department department = new Department();
             department.setCode(departmentCode);
-            departmentDao.save(department);
+            departmentRepository.save(department);
             return department;
         }
 

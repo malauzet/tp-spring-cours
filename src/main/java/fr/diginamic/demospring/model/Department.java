@@ -14,6 +14,7 @@ import java.util.List;
  * {@link fr.diginamic.demospring.dto.DepartmentDto} instead.</p>
  */
 @Entity
+@Table(name = "departement")
 public class Department {
 
     /** Auto-generated primary key. */
@@ -22,9 +23,11 @@ public class Department {
     private Integer id;
 
     /** INSEE department code (e.g. {@code "69"}, {@code "2A"}). */
+    @Column(name = "code")
     private String code;
 
     /** Department name (e.g. {@code "Rhône"}). */
+    @Column(name = "nom")
     private String name;
 
     /** Cities belonging to this department; not serialized. */

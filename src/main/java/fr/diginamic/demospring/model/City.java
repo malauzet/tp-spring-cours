@@ -10,6 +10,7 @@ import jakarta.persistence.*;
  * clients goes through {@link fr.diginamic.demospring.dto.CityDto}.</p>
  */
 @Entity
+@Table(name = "ville")
 public class City {
 
     /** Auto-generated primary key. */
@@ -18,13 +19,16 @@ public class City {
     private Integer id;
 
     /** City name (e.g. {@code "Lyon"}). */
+    @Column(name = "nom")
     private String name;
 
     /** Number of inhabitants. */
+    @Column(name = "nb_habs")
     private int population;
 
     /** Department this city belongs to. */
     @ManyToOne
+    @JoinColumn(name = "id_dept")
     private Department department;
 
     /** Default constructor required by JPA. */

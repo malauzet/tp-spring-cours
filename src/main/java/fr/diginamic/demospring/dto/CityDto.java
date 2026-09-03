@@ -3,7 +3,7 @@ package fr.diginamic.demospring.dto;
 import fr.diginamic.demospring.model.City;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -21,7 +21,7 @@ public class CityDto {
     private Integer id;
 
     @Schema(description = "City name.", example = "Lyon", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "City name cannot be null.")
+    @NotBlank(message = "City name cannot be null.")
     @Size(min = 2, message = "City name must contain at least 2 letters.")
     private String name;
 

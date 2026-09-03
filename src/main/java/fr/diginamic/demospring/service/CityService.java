@@ -4,8 +4,11 @@ import fr.diginamic.demospring.dto.CityDto;
 import fr.diginamic.demospring.exception.CityException;
 import fr.diginamic.demospring.exception.NotFoundException;
 import fr.diginamic.demospring.model.City;
-import fr.diginamic.demospring.dao.CityDao;
 import fr.diginamic.demospring.model.Department;
+import fr.diginamic.demospring.repository.CityRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -22,23 +25,21 @@ import java.util.Optional;
 @Service
 public class CityService {
 
-    private final CityDao cityDao;
+    private final CityRepository cityRepository;
     private final DepartmentService departmentService;
 
     /**
-     * @param cityDao           city data access object
+     * @param cityRepository           city data access object
      * @param departmentService used to resolve the department a city belongs to
      */
-    public CityService(CityDao cityDao, DepartmentService departmentService) {
-        this.cityDao = cityDao;
+    public CityService(CityRepository cityRepository, DepartmentService departmentService) {
+        this.cityRepository = cityRepository;
         this.departmentService = departmentService;
     }
 
     /** @return every city */
-    public List<CityDto> getCities() {
-        return cityDao.findAll().stream()
-                .map(CityDto::fromEntity)
-                .toList();
+    public Page<CityDto> getCities(Pageable pageable) {
+        return cityRepository.findAll(pageable).map(CityDto::fromEntity);
     }
 
     /**
@@ -46,7 +47,7 @@ public class CityService {
      * @return the city, or {@link Optional#empty()} if not found
      */
     public Optional<CityDto> getCityById(int id) {
-        return cityDao.findById(id).map(CityDto::fromEntity);
+        return cityRepository.findById(id).map(CityDto::fromEntity);
     }
 
     /**
@@ -54,7 +55,7 @@ public class CityService {
      * @return the first matching city, or {@link Optional#empty()}
      */
     public Optional<CityDto> getCityByName(String name) {
-        return cityDao.findByName(name).map(CityDto::fromEntity);
+        return cityRepository.findByNameIgnoreCase(name).map(CityDto::fromEntity);
     }
 
     /**
@@ -70,15 +71,15 @@ public class CityService {
 
         Department department = departmentService.resolve(city.getDepartmentId(), city.getDepartmentCode());
 
-        if (cityDao.existsByNameAndDepartmentId(city.getName(), department.getId())) {
+        if (cityRepository.existsByNameIgnoreCaseAndDepartmentId(city.getName(), department.getId())) {
             throw new CityException("The city '" + city.getName() + "' already exists in this department.");
         }
 
         City entity = city.toEntity();
         entity.setDepartment(department);
 
-        cityDao.save(entity);
-        return cityDao.findAll().stream().map(CityDto::fromEntity).toList();
+        cityRepository.save(entity);
+        return cityRepository.findAll().stream().map(CityDto::fromEntity).toList();
     }
 
     /**
@@ -94,7 +95,7 @@ public class CityService {
     @Transactional
     public List<CityDto> updateCity(int id, CityDto newData) throws CityException, NotFoundException {
 
-        Optional<City> existing = cityDao.findById(id);
+        Optional<City> existing = cityRepository.findById(id);
 
         if (existing.isEmpty()) {
             throw new NotFoundException("City with id " + id + " not found");
@@ -102,7 +103,7 @@ public class CityService {
 
         Department department = departmentService.resolve(newData.getDepartmentId(), newData.getDepartmentCode());
 
-        if (cityDao.existsByNameAndDepartmentIdAndIdNot(newData.getName(), department.getId(), id)) {
+        if (cityRepository.existsByNameIgnoreCaseAndDepartmentIdAndIdNot(newData.getName(), department.getId(), id)) {
             throw new CityException("The city '" + newData.getName() + "' already exists in this department.");
         }
 
@@ -110,7 +111,7 @@ public class CityService {
         city.setName(newData.getName());
         city.setPopulation(newData.getPopulation());
         city.setDepartment(department);
-        return cityDao.findAll().stream().map(CityDto::fromEntity).toList();
+        return cityRepository.findAll().stream().map(CityDto::fromEntity).toList();
     }
 
     /**
@@ -123,13 +124,12 @@ public class CityService {
     @Transactional
     public List<CityDto> deleteCity(int id) throws NotFoundException {
 
-        boolean deleted = cityDao.deleteById(id);
-
-        if (!deleted) {
+        if (!cityRepository.existsById(id)) {
             throw new NotFoundException("City with id " + id + " not found");
         }
 
-        return cityDao.findAll().stream().map(CityDto::fromEntity).toList();
+        cityRepository.deleteById(id);
+        return cityRepository.findAll().stream().map(CityDto::fromEntity).toList();
     }
 
     /**
@@ -138,7 +138,7 @@ public class CityService {
      * @throws CityException if no city matches
      */
     public List<CityDto> searchByNameStartingWith(String prefix) throws CityException {
-        List<City> result = cityDao.findByNameStartingWith(prefix);
+        List<City> result = cityRepository.findByNameStartingWithIgnoreCase(prefix);
 
         if (result.isEmpty()) {
             throw new CityException("No city found with a name starting with " + prefix);
@@ -153,7 +153,7 @@ public class CityService {
      * @throws CityException if no city matches
      */
     public List<CityDto> searchByPopulationGreaterThan(int min) throws CityException {
-        List<City> result = cityDao.findByPopulationGreaterThan(min);
+        List<City> result = cityRepository.findByPopulationGreaterThanOrderByPopulationDesc(min);
 
         if (result.isEmpty()) {
             throw new CityException("No city has a population greater than " + min);
@@ -169,7 +169,7 @@ public class CityService {
      * @throws CityException if no city matches
      */
     public List<CityDto> searchByPopulationBetween(int min, int max) throws CityException {
-        List<City> result = cityDao.findByPopulationBetween(min, max);
+        List<City> result = cityRepository.findByPopulationBetweenOrderByPopulationDesc(min, max);
 
         if (result.isEmpty()) {
             throw new CityException("No city has a population between " + min + " and " + max);
@@ -187,7 +187,9 @@ public class CityService {
      * @throws CityException if the department has no city
      */
     public List<CityDto> getLargestCitiesOfDepartment(int departmentId, int limit) throws CityException {
-        List<City> result = cityDao.findTopByDepartmentOrderByPopulationDesc(departmentId, limit);
+
+        Pageable topN = PageRequest.of(0, limit);
+        List<City> result = cityRepository.findByDepartmentIdOrderByPopulationDesc(departmentId, topN).getContent();
 
         if (result.isEmpty()) {
             throw new CityException("No city found with a department with id " + departmentId);
@@ -206,10 +208,28 @@ public class CityService {
      * @throws CityException if no city matches
      */
     public List<CityDto> searchByPopulationBetweenInDepartment(int departmentId, int min, int max) throws CityException {
-        List<City> result = cityDao.findByDepartmentAndPopulationBetween(departmentId, min, max);
+        List<City> result = cityRepository.findByDepartmentIdAndPopulationBetweenOrderByPopulationDesc(departmentId, min, max);
 
         if (result.isEmpty()) {
             throw new CityException("No city in department " + departmentId + " has a population between " + min + " and " + max);
+        }
+
+        return result.stream().map(CityDto::fromEntity).toList();
+    }
+
+    /**
+     * Lists the cities of a department whose population is above a threshold.
+     *
+     * @param departmentId id of the department
+     * @param min          exclusive lower bound on population
+     * @return the matching cities, ordered by descending population
+     * @throws CityException if no city matches
+     */
+    public List<CityDto> searchByPopulationGreaterThanInDepartment(int departmentId, int min) throws CityException {
+        List<City> result = cityRepository.findByDepartmentIdAndPopulationGreaterThanOrderByPopulationDesc(departmentId, min);
+
+        if (result.isEmpty()) {
+            throw new CityException("No city in department " + departmentId + " has a population greater than " + min);
         }
 
         return result.stream().map(CityDto::fromEntity).toList();

@@ -10,6 +10,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,9 +42,10 @@ public class CityController {
      * @return every city
      */
     @GetMapping
-    @Operation(summary = "List all cities")
-    public List<CityDto> getCities() {
-        return cityService.getCities();
+    @Operation(summary = "List all cities (paginated)")
+    public Page<CityDto> getCities(@RequestParam(defaultValue = "0") int page,
+                                   @RequestParam(defaultValue = "20") int size) {
+        return cityService.getCities(PageRequest.of(page, size));
     }
 
     /**
@@ -158,6 +161,24 @@ public class CityController {
                                                                @Parameter(description = "Exclusive lower bound") @PathVariable int min,
                                                                @Parameter(description = "Exclusive upper bound") @PathVariable int max) throws CityException {
         return cityService.searchByPopulationBetweenInDepartment(departmentId, min, max);
+    }
+
+    /**
+     * @param departmentId department id
+     * @param min          exclusive lower bound on population
+     * @return the cities of the department more populated than {@code min},
+     *         ordered by descending population
+     * @throws CityException if no city matches
+     */
+    @GetMapping("/department/{departmentId}/population/greater-than/{min}")
+    @Operation(summary = "List cities of a department with a population greater than a threshold")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "At least one city matched"),
+            @ApiResponse(responseCode = "400", description = "No city matched")
+    })
+    public List<CityDto> searchByPopulationGreaterThanInDepartment(@Parameter(description = "Department id") @PathVariable int departmentId,
+                                                                   @Parameter(description = "Exclusive lower bound") @PathVariable int min) throws CityException {
+        return cityService.searchByPopulationGreaterThanInDepartment(departmentId, min);
     }
 
     /**
