@@ -21,6 +21,11 @@ import java.util.Optional;
  * <p>All public methods accept and return {@link CityDto}; entities never leave
  * this layer. Department resolution (find by id/code, or create from an unknown
  * code) is delegated to {@link DepartmentService#resolve}.</p>
+ *
+ * <p>Search methods return whatever matched, including an empty list; "no
+ * result" is not an error. Only single-resource lookups signal absence, and they
+ * do so with an empty {@link Optional} that the controller turns into a
+ * {@code 404}.</p>
  */
 @Service
 public class CityService {
@@ -29,7 +34,7 @@ public class CityService {
     private final DepartmentService departmentService;
 
     /**
-     * @param cityRepository           city data access object
+     * @param cityRepository    city repository
      * @param departmentService used to resolve the department a city belongs to
      */
     public CityService(CityRepository cityRepository, DepartmentService departmentService) {
@@ -37,7 +42,10 @@ public class CityService {
         this.departmentService = departmentService;
     }
 
-    /** @return every city */
+    /**
+     * @param pageable paging information
+     * @return the requested page of cities
+     */
     public Page<CityDto> getCities(Pageable pageable) {
         return cityRepository.findAll(pageable).map(CityDto::fromEntity);
     }
@@ -62,12 +70,12 @@ public class CityService {
      * Creates a city and attaches it to its department.
      *
      * @param city the city to create; must carry a department id or code
-     * @return the full list of cities after insertion
+     * @return the created city
      * @throws CityException if no department can be resolved, or a city with the
      *                       same name already exists in that department
      */
     @Transactional
-    public List<CityDto> addCity(CityDto city) throws CityException {
+    public CityDto addCity(CityDto city) throws CityException {
 
         Department department = departmentService.resolve(city.getDepartmentId(), city.getDepartmentCode());
 
@@ -78,8 +86,7 @@ public class CityService {
         City entity = city.toEntity();
         entity.setDepartment(department);
 
-        cityRepository.save(entity);
-        return cityRepository.findAll().stream().map(CityDto::fromEntity).toList();
+        return CityDto.fromEntity(cityRepository.save(entity));
     }
 
     /**
@@ -87,19 +94,16 @@ public class CityService {
      *
      * @param id      id of the city to update
      * @param newData new values; must carry a department id or code
-     * @return the full list of cities after the update
+     * @return the updated city
      * @throws CityException     if no department can be resolved, or another city
      *                           with the same name already exists in that department
      * @throws NotFoundException if no city has the given id
      */
     @Transactional
-    public List<CityDto> updateCity(int id, CityDto newData) throws CityException, NotFoundException {
+    public CityDto updateCity(int id, CityDto newData) throws CityException, NotFoundException {
 
-        Optional<City> existing = cityRepository.findById(id);
-
-        if (existing.isEmpty()) {
-            throw new NotFoundException("City with id " + id + " not found");
-        }
+        City city = cityRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("City with id " + id + " not found"));
 
         Department department = departmentService.resolve(newData.getDepartmentId(), newData.getDepartmentCode());
 
@@ -107,95 +111,76 @@ public class CityService {
             throw new CityException("The city '" + newData.getName() + "' already exists in this department.");
         }
 
-        City city = existing.get();
         city.setName(newData.getName());
         city.setPopulation(newData.getPopulation());
         city.setDepartment(department);
-        return cityRepository.findAll().stream().map(CityDto::fromEntity).toList();
+
+        return CityDto.fromEntity(cityRepository.save(city));
     }
 
     /**
      * Deletes a city by id.
      *
      * @param id id of the city to delete
-     * @return the full list of cities after deletion
      * @throws NotFoundException if no city has the given id
      */
     @Transactional
-    public List<CityDto> deleteCity(int id) throws NotFoundException {
+    public void deleteCity(int id) throws NotFoundException {
 
         if (!cityRepository.existsById(id)) {
             throw new NotFoundException("City with id " + id + " not found");
         }
 
         cityRepository.deleteById(id);
-        return cityRepository.findAll().stream().map(CityDto::fromEntity).toList();
     }
 
     /**
      * @param prefix case-insensitive name prefix
-     * @return cities whose name starts with {@code prefix}
-     * @throws CityException if no city matches
+     * @return cities whose name starts with {@code prefix} (empty if none)
      */
-    public List<CityDto> searchByNameStartingWith(String prefix) throws CityException {
-        List<City> result = cityRepository.findByNameStartingWithIgnoreCase(prefix);
-
-        if (result.isEmpty()) {
-            throw new CityException("No city found with a name starting with " + prefix);
-        }
-
-        return result.stream().map(CityDto::fromEntity).toList();
+    public List<CityDto> searchByNameStartingWith(String prefix) {
+        return cityRepository.findByNameStartingWithIgnoreCase(prefix).stream()
+                .map(CityDto::fromEntity)
+                .toList();
     }
 
     /**
      * @param min exclusive lower bound on population
-     * @return cities with a population strictly greater than {@code min}
-     * @throws CityException if no city matches
+     * @return cities more populated than {@code min}, most populated first
+     *         (empty if none)
      */
-    public List<CityDto> searchByPopulationGreaterThan(int min) throws CityException {
-        List<City> result = cityRepository.findByPopulationGreaterThanOrderByPopulationDesc(min);
-
-        if (result.isEmpty()) {
-            throw new CityException("No city has a population greater than " + min);
-        }
-
-        return result.stream().map(CityDto::fromEntity).toList();
+    public List<CityDto> searchByPopulationGreaterThan(int min) {
+        return cityRepository.findByPopulationGreaterThanOrderByPopulationDesc(min).stream()
+                .map(CityDto::fromEntity)
+                .toList();
     }
 
     /**
      * @param min exclusive lower bound on population
      * @param max exclusive upper bound on population
-     * @return cities whose population lies strictly between {@code min} and {@code max}
-     * @throws CityException if no city matches
+     * @return cities whose population lies strictly between the bounds, most
+     *         populated first (empty if none)
      */
-    public List<CityDto> searchByPopulationBetween(int min, int max) throws CityException {
-        List<City> result = cityRepository.findByPopulationBetweenOrderByPopulationDesc(min, max);
-
-        if (result.isEmpty()) {
-            throw new CityException("No city has a population between " + min + " and " + max);
-        }
-
-        return result.stream().map(CityDto::fromEntity).toList();
+    public List<CityDto> searchByPopulationBetween(int min, int max) {
+        return cityRepository.findByPopulationBetweenOrderByPopulationDesc(min, max).stream()
+                .map(CityDto::fromEntity)
+                .toList();
     }
 
     /**
      * Lists the most populated cities of a department.
      *
      * @param departmentId id of the department
-     * @param limit        maximum number of cities to return
+     * @param limit        maximum number of cities to return (at least 1)
      * @return up to {@code limit} cities ordered by descending population
-     * @throws CityException if the department has no city
+     *         (empty if the department has no city)
      */
-    public List<CityDto> getLargestCitiesOfDepartment(int departmentId, int limit) throws CityException {
+    public List<CityDto> getLargestCitiesOfDepartment(int departmentId, int limit) {
 
         Pageable topN = PageRequest.of(0, limit);
-        List<City> result = cityRepository.findByDepartmentIdOrderByPopulationDesc(departmentId, topN).getContent();
-
-        if (result.isEmpty()) {
-            throw new CityException("No city found with a department with id " + departmentId);
-        }
-
-        return result.stream().map(CityDto::fromEntity).toList();
+        return cityRepository.findByDepartmentIdOrderByPopulationDesc(departmentId, topN).getContent().stream()
+                .map(CityDto::fromEntity)
+                .toList();
     }
 
     /**
@@ -204,17 +189,12 @@ public class CityService {
      * @param departmentId id of the department
      * @param min          exclusive lower bound on population
      * @param max          exclusive upper bound on population
-     * @return the matching cities
-     * @throws CityException if no city matches
+     * @return the matching cities, most populated first (empty if none)
      */
-    public List<CityDto> searchByPopulationBetweenInDepartment(int departmentId, int min, int max) throws CityException {
-        List<City> result = cityRepository.findByDepartmentIdAndPopulationBetweenOrderByPopulationDesc(departmentId, min, max);
-
-        if (result.isEmpty()) {
-            throw new CityException("No city in department " + departmentId + " has a population between " + min + " and " + max);
-        }
-
-        return result.stream().map(CityDto::fromEntity).toList();
+    public List<CityDto> searchByPopulationBetweenInDepartment(int departmentId, int min, int max) {
+        return cityRepository.findByDepartmentIdAndPopulationBetweenOrderByPopulationDesc(departmentId, min, max).stream()
+                .map(CityDto::fromEntity)
+                .toList();
     }
 
     /**
@@ -222,16 +202,11 @@ public class CityService {
      *
      * @param departmentId id of the department
      * @param min          exclusive lower bound on population
-     * @return the matching cities, ordered by descending population
-     * @throws CityException if no city matches
+     * @return the matching cities, most populated first (empty if none)
      */
-    public List<CityDto> searchByPopulationGreaterThanInDepartment(int departmentId, int min) throws CityException {
-        List<City> result = cityRepository.findByDepartmentIdAndPopulationGreaterThanOrderByPopulationDesc(departmentId, min);
-
-        if (result.isEmpty()) {
-            throw new CityException("No city in department " + departmentId + " has a population greater than " + min);
-        }
-
-        return result.stream().map(CityDto::fromEntity).toList();
+    public List<CityDto> searchByPopulationGreaterThanInDepartment(int departmentId, int min) {
+        return cityRepository.findByDepartmentIdAndPopulationGreaterThanOrderByPopulationDesc(departmentId, min).stream()
+                .map(CityDto::fromEntity)
+                .toList();
     }
 }

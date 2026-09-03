@@ -10,7 +10,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
+import jakarta.validation.constraints.Positive;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,11 +20,13 @@ import java.util.List;
 /**
  * REST endpoints for departments, exposed under {@code /departments}.
  *
- * <p>All payloads are {@link DepartmentDto}. Errors are translated by
+ * <p>All payloads are {@link DepartmentDto}. Errors are translated into
+ * {@link fr.diginamic.demospring.exception.ApiError} responses by
  * {@link fr.diginamic.demospring.exception.GlobalExceptionHandler}.</p>
  */
 @RestController
 @RequestMapping("/departments")
+@Validated
 @Tag(name = "Departments", description = "Read and manage departments")
 public class DepartmentController {
 
@@ -55,7 +59,7 @@ public class DepartmentController {
             @ApiResponse(responseCode = "200", description = "Department found"),
             @ApiResponse(responseCode = "404", description = "No department with this id")
     })
-    public DepartmentDto getDepartmentById(@Parameter(description = "Department id") @PathVariable int id) throws NotFoundException {
+    public DepartmentDto getDepartmentById(@Parameter(description = "Department id") @PathVariable @Positive int id) throws NotFoundException {
         return departmentService.getDepartmentById(id)
                 .orElseThrow(() -> new NotFoundException("Department with id " + id + " not found"));
     }
@@ -64,17 +68,18 @@ public class DepartmentController {
      * Creates a department.
      *
      * @param department the department to create
-     * @return the full list of departments after insertion
+     * @return the created department
      * @throws CityException if a department with the same code already exists
      */
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a department")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Department created"),
+            @ApiResponse(responseCode = "201", description = "Department created"),
             @ApiResponse(responseCode = "400", description = "Invalid payload or duplicate code")
     })
-    public ResponseEntity<List<DepartmentDto>> addDepartment(@Valid @RequestBody DepartmentDto department) throws CityException {
-        return ResponseEntity.ok(departmentService.addDepartment(department));
+    public DepartmentDto addDepartment(@Valid @RequestBody DepartmentDto department) throws CityException {
+        return departmentService.addDepartment(department);
     }
 
     /**
@@ -82,7 +87,7 @@ public class DepartmentController {
      *
      * @param id         id of the department to update
      * @param department new values
-     * @return the full list of departments after the update
+     * @return the updated department
      * @throws NotFoundException if no department has this id
      */
     @PutMapping("/{id}")
@@ -92,26 +97,26 @@ public class DepartmentController {
             @ApiResponse(responseCode = "400", description = "Invalid payload"),
             @ApiResponse(responseCode = "404", description = "No department with this id")
     })
-    public ResponseEntity<List<DepartmentDto>> updateDepartment(@Parameter(description = "Department id") @PathVariable int id,
-                                                               @Valid @RequestBody DepartmentDto department)
+    public DepartmentDto updateDepartment(@Parameter(description = "Department id") @PathVariable @Positive int id,
+                                          @Valid @RequestBody DepartmentDto department)
             throws NotFoundException {
-        return ResponseEntity.ok(departmentService.updateDepartment(id, department));
+        return departmentService.updateDepartment(id, department);
     }
 
     /**
      * Deletes a department.
      *
      * @param id id of the department to delete
-     * @return the full list of departments after deletion
      * @throws NotFoundException if no department has this id
      */
     @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete a department")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Department deleted"),
+            @ApiResponse(responseCode = "204", description = "Department deleted"),
             @ApiResponse(responseCode = "404", description = "No department with this id")
     })
-    public ResponseEntity<List<DepartmentDto>> deleteDepartment(@Parameter(description = "Department id") @PathVariable int id) throws NotFoundException {
-        return ResponseEntity.ok(departmentService.deleteDepartment(id));
+    public void deleteDepartment(@Parameter(description = "Department id") @PathVariable @Positive int id) throws NotFoundException {
+        departmentService.deleteDepartment(id);
     }
 }

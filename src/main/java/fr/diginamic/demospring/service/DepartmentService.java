@@ -24,7 +24,7 @@ public class DepartmentService {
     private final DepartmentRepository departmentRepository;
 
     /**
-     * @param departmentRepository department data access object
+     * @param departmentRepository department repository
      */
     public DepartmentService(DepartmentRepository departmentRepository) {
         this.departmentRepository = departmentRepository;
@@ -47,18 +47,17 @@ public class DepartmentService {
      * Creates a department.
      *
      * @param department the department to create
-     * @return the full list of departments after insertion
+     * @return the created department
      * @throws CityException if a department with the same code already exists
      */
     @Transactional
-    public List<DepartmentDto> addDepartment(DepartmentDto department) throws CityException {
+    public DepartmentDto addDepartment(DepartmentDto department) throws CityException {
 
         if (departmentRepository.existsByCodeIgnoreCase(department.getCode())) {
             throw new CityException("The department '" + department.getCode() + "' already exists.");
         }
 
-        departmentRepository.save(department.toEntity());
-        return departmentRepository.findAll().stream().map(DepartmentDto::fromEntity).toList();
+        return DepartmentDto.fromEntity(departmentRepository.save(department.toEntity()));
     }
 
     /**
@@ -66,40 +65,35 @@ public class DepartmentService {
      *
      * @param id      id of the department to update
      * @param newData new values
-     * @return the full list of departments after the update
+     * @return the updated department
      * @throws NotFoundException if no department has the given id
      */
     @Transactional
-    public List<DepartmentDto> updateDepartment(int id, DepartmentDto newData) throws NotFoundException {
+    public DepartmentDto updateDepartment(int id, DepartmentDto newData) throws NotFoundException {
 
-        Optional<Department> existing = departmentRepository.findById(id);
+        Department department = departmentRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Department with id " + id + " not found"));
 
-        if (existing.isEmpty()) {
-            throw new NotFoundException("Department with id " + id + " not found");
-        }
-
-        Department department = existing.get();
         department.setCode(newData.getCode());
         department.setName(newData.getName());
-        return departmentRepository.findAll().stream().map(DepartmentDto::fromEntity).toList();
+
+        return DepartmentDto.fromEntity(departmentRepository.save(department));
     }
 
     /**
      * Deletes a department by id.
      *
      * @param id id of the department to delete
-     * @return the full list of departments after deletion
      * @throws NotFoundException if no department has the given id
      */
     @Transactional
-    public List<DepartmentDto> deleteDepartment(int id) throws NotFoundException {
+    public void deleteDepartment(int id) throws NotFoundException {
 
         if (!departmentRepository.existsById(id)) {
             throw new NotFoundException("Department with id " + id + " not found");
         }
 
         departmentRepository.deleteById(id);
-        return departmentRepository.findAll().stream().map(DepartmentDto::fromEntity).toList();
     }
 
     /**
@@ -114,7 +108,7 @@ public class DepartmentService {
      *   <li>otherwise a {@link CityException} is thrown.</li>
      * </ol>
      *
-     * @param departmentId candidate department id, may be {@code null}
+     * @param departmentId   candidate department id, may be {@code null}
      * @param departmentCode candidate department code, may be {@code null} or blank
      * @return the resolved (possibly newly created) managed entity
      * @throws CityException if neither a known id nor a code is available
