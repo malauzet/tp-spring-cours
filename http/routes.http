@@ -1,0 +1,488 @@
+# DemoSpring - API route tests
+# Dataset: tp-spring-10-aventures.sql (100 departments, 1002 cities)
+# Run in IntelliJ HTTP Client or `httpie`/`curl` equivalents.
+#
+# Conventions after the Tier-1 refactor:
+#  - every FAILURE returns the same JSON: {timestamp, status, error, message, path}
+#  - POST -> 201 + the created resource
+#  - PUT  -> 200 + the updated resource
+#  - DELETE -> 204, empty body
+#  - search endpoints -> 200 + [] when nothing matched (never 400)
+#  - constrained path/query ints (id, page, size, n, min, max) -> 400 when out of range
+
+@host = http://localhost:8080
+
+### ─────────────────────────────────────────────
+### DEPARTMENTS
+### ─────────────────────────────────────────────
+
+### [1] List all departments -> 200
+GET {{host}}/departments
+
+### [2] Get department by id -> 200
+GET {{host}}/departments/7
+
+### [3] Get department by unknown id -> 404
+GET {{host}}/departments/99999
+
+### [4] Create department, duplicate code -> 400 "already exists"
+POST {{host}}/departments
+Content-Type: application/json
+
+{
+  "code": "34",
+  "name": "Herault"
+}
+
+### [5] Create department, blank code -> 400 "code: Department code cannot be blank."
+POST {{host}}/departments
+Content-Type: application/json
+
+{
+  "code": "",
+  "name": "X"
+}
+
+### [6] Create department, new code -> 201 + the created department
+POST {{host}}/departments
+Content-Type: application/json
+
+{
+  "code": "ZZ",
+  "name": "Testland"
+}
+
+### [7] Update department -> 200 + the updated department
+###     (set :id to the ZZ department created above)
+PUT {{host}}/departments/102
+Content-Type: application/json
+
+{
+  "code": "ZZ",
+  "name": "Renamed"
+}
+
+### [8] Update department, unknown id -> 404
+PUT {{host}}/departments/99999
+Content-Type: application/json
+
+{
+  "code": "QQ"
+}
+
+### [9] Delete department -> 204, empty body  (cleanup; set :id to the ZZ department)
+DELETE {{host}}/departments/102
+
+### [10] Delete department, unknown id -> 404
+DELETE {{host}}/departments/99999
+
+### [11] Get department, id 0 -> 400 (@Positive)
+GET {{host}}/departments/0
+
+
+### ─────────────────────────────────────────────
+### CITIES - reads
+### ─────────────────────────────────────────────
+
+### [12] List cities, paginated -> 200
+GET {{host}}/cities?page=1&size=2
+
+### [13] Get city by id -> 200 (Paris)
+GET {{host}}/cities/13321
+
+### [14] Get city by unknown id -> 404
+GET {{host}}/cities/999999
+
+### [15] Get city by exact name (case-insensitive) -> 200
+GET {{host}}/cities/search/name/Lyon 3e Arrondissement
+
+### [16] Get city by unknown name -> 404
+GET {{host}}/cities/search/name/Atlantis
+
+### [17] Cities whose name starts with a prefix -> 200
+GET {{host}}/cities/search/startswith/Saint-Bri
+
+### [18] Prefix with no match -> 200 + []
+GET {{host}}/cities/search/startswith/Zzz
+
+### [19] Population strictly greater than -> 200 (desc)
+GET {{host}}/cities/search/population/greater/800000
+
+### [20] Population greater than, no match -> 200 + []
+GET {{host}}/cities/search/population/greater/99999999
+
+### [21] Population strictly between (bounds exclusive) -> 200
+GET {{host}}/cities/search/population/between/400000/900000
+
+### [22] Population between, no match -> 200 + []
+GET {{host}}/cities/search/population/between/1/2
+
+### [23] N largest cities of a department -> 200
+GET {{host}}/cities/search/department/48/largest/5
+
+### [24] Largest cities of unknown department -> 200 + []
+GET {{host}}/cities/search/department/99999/largest/5
+
+### [25] Cities of a department, population between -> 200
+GET {{host}}/cities/search/department/48/population/between/40000/90000
+
+### [26] Cities of a department, population greater than (alt route) -> 200
+GET {{host}}/cities/department/48/population/greater-than/100000
+
+
+### ─────────────────────────────────────────────
+### CITIES - writes
+### ─────────────────────────────────────────────
+
+### [27] Create city, valid -> 201 + the created city
+POST {{host}}/cities
+Content-Type: application/json
+
+{
+  "name": "Testville",
+  "population": 1234,
+  "departmentCode": "34"
+}
+
+### [28] Create city, name too short -> 400 "name: City name must contain at least 2 letters."
+POST {{host}}/cities
+Content-Type: application/json
+
+{
+  "name": "A",
+  "population": 10,
+  "departmentCode": "34"
+}
+
+### [29] Create city, name + population both invalid -> 400, BOTH reported
+POST {{host}}/cities
+Content-Type: application/json
+
+{
+  "name": "A",
+  "population": 0
+}
+
+### [30] Create city, no department -> 400 "Unknown department."
+POST {{host}}/cities
+Content-Type: application/json
+
+{
+  "name": "Nodept",
+  "population": 10
+}
+
+### [31] Create city, duplicate in department -> 400 "already exists"
+POST {{host}}/cities
+Content-Type: application/json
+
+{
+  "name": "Testville",
+  "population": 9999,
+  "departmentCode": "34"
+}
+
+### [32] Update city -> 200 + the updated city  (set :id to the Testville city)
+PUT {{host}}/cities/14324
+Content-Type: application/json
+
+{
+  "name": "Testville2",
+  "population": 5000,
+  "departmentCode": "34"
+}
+
+### [33] Update city, unknown id -> 404
+PUT {{host}}/cities/999999
+Content-Type: application/json
+
+{
+  "name": "Ghost",
+  "population": 5,
+  "departmentCode": "34"
+}
+
+### [34] Delete city -> 204, empty body  (set :id to the Testville city)
+DELETE {{host}}/cities/14324
+
+### [35] Delete city, unknown id -> 404
+DELETE {{host}}/cities/999999
+
+
+### ─────────────────────────────────────────────
+### EDGE CASES / WEIRD VALUES
+### ─────────────────────────────────────────────
+
+### [E1] Non-numeric path var -> 400 "Parameter 'id' must be of type int."
+GET {{host}}/cities/abc
+
+### [E2] Float path var -> 400
+GET {{host}}/cities/1.5
+
+### [E3] Value above int range -> 400
+GET {{host}}/cities/99999999999999
+
+### [E4] Negative id -> 400 (@Positive)
+GET {{host}}/cities/-5
+
+### [E5] id 0 -> 400 (@Positive)
+GET {{host}}/cities/0
+
+### [E6] page size 0 -> 400 (getCities.size: must be >= 1)
+GET {{host}}/cities?page=0&size=0
+
+### [E7] negative page -> 400 (@Min(0))
+GET {{host}}/cities?page=-1&size=5
+
+### [E8] negative size -> 400 (@Min(1))
+GET {{host}}/cities?page=0&size=-3
+
+### [E9] page far beyond data -> 200, empty content
+GET {{host}}/cities?page=99999&size=5
+
+### [E10] non-numeric page param -> 400
+GET {{host}}/cities?page=x&size=5
+
+### [E11] largest/0 -> 400 (@Positive on n)
+GET {{host}}/cities/search/department/48/largest/0
+
+### [E12] largest/-1 -> 400
+GET {{host}}/cities/search/department/48/largest/-1
+
+### [E13] population between with min > max (both >= 0) -> 200 + [] (no match)
+GET {{host}}/cities/search/population/between/900000/1
+
+### [E14] population greater than negative -> 400 (@PositiveOrZero)
+GET {{host}}/cities/search/population/greater/-1
+
+### [E15] PATCH on a city -> 405 Method Not Allowed
+PATCH {{host}}/cities/13321
+
+### [E16] Unknown route -> 404 "No endpoint GET /villes."
+GET {{host}}/villes
+
+### [E17] Trailing slash -> 404 (Spring no longer matches by default)
+GET {{host}}/cities/13321/
+
+### [E18] Empty request body -> 400 "Malformed or unreadable request body."
+POST {{host}}/cities
+Content-Type: application/json
+
+### [E19] Empty JSON object -> 400, both fields: "name: ... cannot be null.; population: ... at least 1 ..."
+POST {{host}}/cities
+Content-Type: application/json
+
+{}
+
+### [E20] Malformed JSON -> 400 "Malformed or unreadable request body."
+POST {{host}}/cities
+Content-Type: application/json
+
+{"name":
+
+### [E21] Wrong scalar type (population as text) -> 400
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "name": "Xy", "population": "lots", "departmentCode": "34" }
+
+### [E22] Content-Type text/plain -> 415 Unsupported Media Type
+POST {{host}}/cities
+Content-Type: text/plain
+
+{ "name": "Zpp", "population": 5, "departmentId": 1 }
+
+### [E23] name = "  " (two spaces) -> 201 CREATED  !! still weak (Tier-2 item 13):
+###       @Size(min=2) passes on whitespace, no @NotBlank / trim. Clean up after.
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "name": "  ", "population": 5, "departmentId": 1 }
+
+### [E24] Unknown departmentId only -> 400 "Unknown department."
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "name": "Zqww", "population": 5, "departmentId": 88888 }
+
+### [E25] Unknown departmentCode -> 201 and SILENTLY CREATES department "QX1"
+###       (documented behaviour of DepartmentService.resolve; Tier-2 item).
+###       Clean up both city and dept.
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "name": "Ghosttown", "population": 5, "departmentCode": "QX1" }
+
+### [E26] Unknown JSON field is ignored -> 201 (city created). Clean up.
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "name": "Zrr", "population": 5, "departmentId": 1, "bogus": 123 }
+
+### [E27] Case-insensitive duplicate: "PARIS" in dept 37 -> 400 "already exists"
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "name": "PARIS", "population": 1, "departmentId": 37 }
+
+### [E28] Department code = "   " (spaces) -> 400 "code: Department code cannot be blank."
+POST {{host}}/departments
+Content-Type: application/json
+
+{ "code": "   ", "name": "x" }
+
+### [E29] Exact-name lookup does NOT trim: "Paris " -> 404
+GET {{host}}/cities/search/name/Paris%20
+
+### [E30] startswith is case-insensitive: "paris" -> 200
+GET {{host}}/cities/search/startswith/paris
+
+
+### ─────────────────────────────────────────────
+### TYPE MISMATCH — deliberately wrong values in numeric fields
+### ─────────────────────────────────────────────
+
+### --- text where an int is expected: PATH / QUERY (all clean 400) ---
+
+### [T1] letters in a path int -> 400
+GET {{host}}/departments/abc
+
+### [T2] letters in a search int -> 400
+GET {{host}}/cities/search/population/greater/abc
+
+### [T3] letters in second path int -> 400
+GET {{host}}/cities/search/population/between/10/abc
+
+### [T4] letters in department id -> 400
+GET {{host}}/cities/search/department/xx/largest/5
+
+### [T5] letters in the N of largest/N -> 400
+GET {{host}}/cities/search/department/48/largest/five
+
+### [T6] Spring parses leniently: "+5" -> id 5 (valid, so -> 404 no such city)
+GET {{host}}/cities/+5
+
+### --- wrong JSON types in the request body ---
+
+### [T7] population = "lots"  -> 400
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "name": "Zt", "population": "lots", "departmentId": 1 }
+
+### [T8] population = 12.5  -> 201 !! Jackson ACCEPT_FLOAT_AS_INT truncates to 12
+###      (Tier-2: disable ACCEPT_FLOAT_AS_INT). Clean up the created city.
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "name": "Zt", "population": 12.5, "departmentId": 1 }
+
+### [T9] population = "10" (numeric string) -> 201 !! Jackson coerces to 10
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "name": "Zt10", "population": "10", "departmentId": 1 }
+
+### [T10] population = true -> 400
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "name": "Zt", "population": true, "departmentId": 1 }
+
+### [T11] population = null -> 400 (cannot map null into primitive int)
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "name": "Zt", "population": null, "departmentId": 1 }
+
+### [T12] population = [] -> 400
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "name": "Zt", "population": [], "departmentId": 1 }
+
+### [T13] population = 9999999999999 (> Integer.MAX_VALUE) -> 400
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "name": "Zt", "population": 9999999999999, "departmentId": 1 }
+
+### [T14] population = -5 -> 400 "population: City population must be at least 1 inhabitant."
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "name": "Zt", "population": -5, "departmentId": 1 }
+
+### [T15] departmentId = "abc" -> 400
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "name": "Zt", "population": 5, "departmentId": "abc" }
+
+### [T16] departmentId = 1.9 -> 201 !! truncated to 1 (ACCEPT_FLOAT_AS_INT). Clean up.
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "name": "ZtFloatDept", "population": 5, "departmentId": 1.9 }
+
+### [T17] name = 123 (JSON number) -> 201 !! Jackson coerces to "123". Clean up.
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "name": 123, "population": 5, "departmentId": 1 }
+
+### [T18] name = {} (object) -> 400
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "name": {}, "population": 5, "departmentId": 1 }
+
+### [T19] id = "abc" in body -> 400
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "id": "abc", "name": "Zt", "population": 5, "departmentId": 1 }
+
+### [T20] department code = 34 (number) -> coerced to "34" -> 400 "already exists"
+POST {{host}}/departments
+Content-Type: application/json
+
+{ "code": 34, "name": "n" }
+
+### [T21] department code = true -> 201 !! coerced to "true", creates a department. Clean up.
+POST {{host}}/departments
+Content-Type: application/json
+
+{ "code": true }
+
+### --- structural junk ---
+
+### [T22] JSON array instead of object -> 400
+POST {{host}}/cities
+Content-Type: application/json
+
+[ { "name": "Zt", "population": 5, "departmentId": 1 } ]
+
+### [T23] duplicate keys -> 201, last value wins ("Zb"). Clean up.
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "name": "Za", "name": "Zb", "population": 5, "departmentId": 1 }
+
+### [T24] trailing garbage after the JSON -> 400
+POST {{host}}/cities
+Content-Type: application/json
+
+{ "name": "Zt", "population": 5, "departmentId": 1 }garbage
+
+### [T25] bare string body -> 400
+POST {{host}}/cities
+Content-Type: application/json
+
+"hello"
+
+### [T26] bare number body -> 400
+POST {{host}}/cities
+Content-Type: application/json
+
+42
