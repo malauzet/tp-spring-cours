@@ -116,4 +116,11 @@ public interface CityRepository extends JpaRepository<City, Integer> {
      */
     @EntityGraph(attributePaths = "department")
     Page<City> findByDepartmentIdOrderByPopulationDesc(int departmentId, Pageable pageable);
+
+    /**
+     * @param code INSEE department code (case-insensitive)
+     * @return the cities of that department, most populated first
+     */
+    @EntityGraph(attributePaths = "department")
+    List<City> findByDepartmentCodeIgnoreCaseOrderByPopulationDesc(String code);
 }

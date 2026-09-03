@@ -3,12 +3,16 @@ package fr.diginamic.demospring.controller;
 import fr.diginamic.demospring.dto.CityDto;
 import fr.diginamic.demospring.exception.FunctionalException;
 import fr.diginamic.demospring.exception.NotFoundException;
+import fr.diginamic.demospring.model.City;
+import fr.diginamic.demospring.model.Department;
+import fr.diginamic.demospring.repository.CityRepository;
 import fr.diginamic.demospring.service.CityService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
@@ -19,6 +23,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
 
 /**
@@ -38,12 +44,15 @@ import java.util.List;
 public class CityController {
 
     private final CityService cityService;
+    private final CityRepository cityRepository;
 
     /**
-     * @param cityService city business service
+     * @param cityService    city business service
+     * @param cityRepository city repository, used by the CSV export
      */
-    public CityController(CityService cityService) {
+    public CityController(CityService cityService,  CityRepository cityRepository) {
         this.cityService = cityService;
+        this.cityRepository = cityRepository;
     }
 
     /**
@@ -180,6 +189,39 @@ public class CityController {
                                                                    @Parameter(description = "Exclusive lower bound") @PathVariable
                                                                    @PositiveOrZero(message = "Population must not be negative.") int min) {
         return cityService.searchByPopulationGreaterThanInDepartment(departmentId, min);
+    }
+
+    /**
+     * Exports every city more populated than {@code min} as a CSV file. The
+     * columns are: city name, population, department code, department name.
+     *
+     * @param min      exclusive lower bound on population
+     * @param response servlet response the CSV is streamed to as an attachment
+     * @throws IOException if the response cannot be written
+     */
+    @GetMapping("/export/csv/{min}")
+    @Operation(summary = "Export cities more populated than a threshold as a CSV file")
+    @ApiResponse(responseCode = "200", description = "CSV file (text/csv) streamed as an attachment")
+    public void exportCitiesAboveThreshold(@Parameter(description = "Exclusive lower bound on population") @PathVariable int min,
+                                           HttpServletResponse response) throws IOException {
+
+        List<City> cities = cityRepository.findByPopulationGreaterThanOrderByPopulationDesc(min);
+
+        response.setContentType("text/csv");
+        response.setHeader("Content-Disposition", "attachment; filename=\"cities.csv\"");
+
+        PrintWriter writer = response.getWriter();
+
+        writer.append("Name;Population;Department Code;Department Name\n");
+
+        for (City city : cities) {
+            Department department = city.getDepartment();
+            writer.append(city.getName() + ";" + city.getPopulation() + ";"
+                    + (department != null ? department.getCode() : "") + ";"
+                    + (department != null ? department.getName() : "") + "\n");
+        }
+
+        response.flushBuffer();
     }
 
     /**
