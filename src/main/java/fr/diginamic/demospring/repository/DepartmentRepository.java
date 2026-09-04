@@ -1,6 +1,7 @@
 package fr.diginamic.demospring.repository;
 
 import fr.diginamic.demospring.model.Department;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -17,8 +18,9 @@ public interface DepartmentRepository extends JpaRepository<Department, Integer>
 
     /**
      * @param code INSEE department code (case-insensitive)
-     * @return the matching department, or {@link Optional#empty()}
+     * @return the matching department (with its region), or {@link Optional#empty()}
      */
+    @EntityGraph(attributePaths = "region")
     Optional<Department> findByCodeIgnoreCase(String code);
 
     /**
