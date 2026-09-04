@@ -1,6 +1,7 @@
 package fr.diginamic.demospring.repository;
 
 import fr.diginamic.demospring.model.City;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -23,6 +24,7 @@ import java.util.Optional;
  * {@link EntityGraph} on {@code "department"} so the association is fetched in
  * the same query instead of triggering an N+1.</p>
  */
+@NullMarked
 public interface CityRepository extends JpaRepository<City, Integer> {
 
     /**

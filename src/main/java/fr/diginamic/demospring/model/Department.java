@@ -32,6 +32,10 @@ public class Department {
     @OneToMany(mappedBy = "department")
     private List<City> cities;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_region")
+    private Region region;
+
     /** Default constructor required by JPA. */
     public Department() {
     }
@@ -76,5 +80,13 @@ public class Department {
     /** @param name the department name to set */
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Region getRegion() {
+        return region;
+    }
+
+    public void setRegion(Region region) {
+        this.region = region;
     }
 }
