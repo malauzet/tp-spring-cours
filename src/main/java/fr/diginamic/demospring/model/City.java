@@ -2,6 +2,8 @@ package fr.diginamic.demospring.model;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
+
 /**
  * JPA entity representing a city.
  *
@@ -30,6 +32,12 @@ public class City {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_dept")
     private Department department;
+
+    @Column(name="user_update")
+    private String userUpdate;
+
+    @Column(name="date_update")
+    private LocalDateTime dateUpdate;
 
     /** Default constructor required by JPA. */
     public City() {
@@ -87,5 +95,21 @@ public class City {
     /** @param department the owning department to set */
     public void setDepartment(Department department) {
         this.department = department;
+    }
+
+    public LocalDateTime getDateUpdate() {
+        return dateUpdate;
+    }
+
+    public void setDateUpdate(LocalDateTime dateUpdate) {
+        this.dateUpdate = dateUpdate;
+    }
+
+    public String getUserUpdate() {
+        return userUpdate;
+    }
+
+    public void setUserUpdate(String userUpdate) {
+        this.userUpdate = userUpdate;
     }
 }

@@ -6,12 +6,16 @@ import fr.diginamic.demospring.exception.NotFoundException;
 import fr.diginamic.demospring.model.City;
 import fr.diginamic.demospring.model.Department;
 import fr.diginamic.demospring.repository.CityRepository;
+import fr.diginamic.demospring.security.SecurityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,6 +37,8 @@ import java.util.Optional;
 @Service
 @Transactional(readOnly = true)
 public class CityService {
+
+    private static final Logger logger = LoggerFactory.getLogger(CityService.class);
 
     private final CityRepository cityRepository;
     private final DepartmentService departmentService;
@@ -89,8 +95,15 @@ public class CityService {
 
         City entity = city.toEntity();
         entity.setDepartment(department);
+        entity.setUserUpdate(SecurityUtils.getCurrentUsername());
+        entity.setDateUpdate(LocalDateTime.now());
 
-        return CityDto.fromEntity(cityRepository.save(entity));
+        City saved = cityRepository.save(entity);
+
+        logger.info("User '{}' created city '{}' (id={}) in department '{}'",
+                SecurityUtils.getCurrentUsername(), saved.getName(), saved.getId(), department.getCode());
+
+        return CityDto.fromEntity(saved);
     }
 
     /**
@@ -118,8 +131,15 @@ public class CityService {
         city.setName(newData.getName());
         city.setPopulation(newData.getPopulation());
         city.setDepartment(department);
+        city.setUserUpdate(SecurityUtils.getCurrentUsername());
+        city.setDateUpdate(LocalDateTime.now());
 
-        return CityDto.fromEntity(cityRepository.save(city));
+        City saved = cityRepository.save(city);
+
+        logger.info("User '{}' updated city '{}' (id={})",
+                SecurityUtils.getCurrentUsername(), saved.getName(), saved.getId());
+
+        return CityDto.fromEntity(saved);
     }
 
     /**
@@ -136,6 +156,8 @@ public class CityService {
         }
 
         cityRepository.deleteById(id);
+
+        logger.info("User '{}' deleted city (id={})", SecurityUtils.getCurrentUsername(), id);
     }
 
     /**

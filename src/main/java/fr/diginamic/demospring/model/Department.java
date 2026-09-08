@@ -2,6 +2,7 @@ package fr.diginamic.demospring.model;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -35,6 +36,12 @@ public class Department {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_region")
     private Region region;
+
+    @Column(name="user_update")
+    private String userUpdate;
+
+    @Column(name="date_update")
+    private LocalDateTime dateUpdate;
 
     /** Default constructor required by JPA. */
     public Department() {
@@ -88,5 +95,21 @@ public class Department {
 
     public void setRegion(Region region) {
         this.region = region;
+    }
+
+    public LocalDateTime getDateUpdate() {
+        return dateUpdate;
+    }
+
+    public void setDateUpdate(LocalDateTime dateUpdate) {
+        this.dateUpdate = dateUpdate;
+    }
+
+    public String getUserUpdate() {
+        return userUpdate;
+    }
+
+    public void setUserUpdate(String userUpdate) {
+        this.userUpdate = userUpdate;
     }
 }

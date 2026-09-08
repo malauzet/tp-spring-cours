@@ -2,6 +2,7 @@ package fr.diginamic.demospring.model;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -19,6 +20,12 @@ public class Region {
 
     @OneToMany(mappedBy = "region")
     private List<Department> departments;
+
+    @Column(name="user_update")
+    private String userUpdate;
+
+    @Column(name="date_update")
+    private LocalDateTime dateUpdate;
 
     public Region() {
     }
@@ -58,5 +65,21 @@ public class Region {
 
     public void setDepartments(List<Department> departments) {
         this.departments = departments;
+    }
+
+    public LocalDateTime getDateUpdate() {
+        return dateUpdate;
+    }
+
+    public void setDateUpdate(LocalDateTime dateUpdate) {
+        this.dateUpdate = dateUpdate;
+    }
+
+    public String getUserUpdate() {
+        return userUpdate;
+    }
+
+    public void setUserUpdate(String userUpdate) {
+        this.userUpdate = userUpdate;
     }
 }

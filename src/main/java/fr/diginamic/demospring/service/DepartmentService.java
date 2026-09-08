@@ -5,9 +5,13 @@ import fr.diginamic.demospring.exception.FunctionalException;
 import fr.diginamic.demospring.exception.NotFoundException;
 import fr.diginamic.demospring.model.Department;
 import fr.diginamic.demospring.repository.DepartmentRepository;
+import fr.diginamic.demospring.security.SecurityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,6 +28,8 @@ import java.util.Optional;
 @Service
 @Transactional(readOnly = true)
 public class DepartmentService {
+
+    private static final Logger logger = LoggerFactory.getLogger(DepartmentService.class);
 
     private final DepartmentRepository departmentRepository;
 
@@ -61,7 +67,16 @@ public class DepartmentService {
             throw new FunctionalException("The department '" + department.getCode() + "' already exists.");
         }
 
-        return DepartmentDto.fromEntity(departmentRepository.save(department.toEntity()));
+        Department entity = department.toEntity();
+        entity.setUserUpdate(SecurityUtils.getCurrentUsername());
+        entity.setDateUpdate(LocalDateTime.now());
+
+        Department saved = departmentRepository.save(entity);
+
+        logger.info("User '{}' created department '{}' (id={})",
+                SecurityUtils.getCurrentUsername(), saved.getCode(), saved.getId());
+
+        return DepartmentDto.fromEntity(saved);
     }
 
     /**
@@ -80,8 +95,15 @@ public class DepartmentService {
 
         department.setCode(newData.getCode());
         department.setName(newData.getName());
+        department.setUserUpdate(SecurityUtils.getCurrentUsername());
+        department.setDateUpdate(LocalDateTime.now());
 
-        return DepartmentDto.fromEntity(departmentRepository.save(department));
+        Department saved = departmentRepository.save(department);
+
+        logger.info("User '{}' updated department '{}' (id={})",
+                SecurityUtils.getCurrentUsername(), saved.getCode(), saved.getId());
+
+        return DepartmentDto.fromEntity(saved);
     }
 
     /**
@@ -98,6 +120,8 @@ public class DepartmentService {
         }
 
         departmentRepository.deleteById(id);
+
+        logger.info("User '{}' deleted department (id={})", SecurityUtils.getCurrentUsername(), id);
     }
 
     /**
@@ -138,7 +162,13 @@ public class DepartmentService {
             // TP requirement: an unknown code is not an error — create the
             // department on the fly and attach the city to it.
             Department department = new Department(departmentCode, null);
+            department.setUserUpdate(SecurityUtils.getCurrentUsername());
+            department.setDateUpdate(LocalDateTime.now());
             departmentRepository.save(department);
+
+            logger.info("User '{}' auto-created department '{}' (id={}) while resolving a city",
+                    SecurityUtils.getCurrentUsername(), department.getCode(), department.getId());
+
             return department;
         }
 
