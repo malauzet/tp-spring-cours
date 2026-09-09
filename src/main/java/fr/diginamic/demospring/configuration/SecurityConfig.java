@@ -23,6 +23,14 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
         );
 
+        String csp = "default-src 'self'; "
+                + "script-src 'self'; "
+                + "style-src 'self' 'unsafe-inline'; "
+                + "img-src 'self'; "
+                + "font-src 'self'";
+
+        http.headers(headers -> headers.contentSecurityPolicy(c -> c.policyDirectives(csp)));
+
         return http.build();
     }
 
