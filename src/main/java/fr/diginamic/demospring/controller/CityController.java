@@ -20,6 +20,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -61,6 +62,7 @@ public class CityController {
      * @return the requested page of cities, wrapped in a stable pagination envelope
      */
     @GetMapping
+    @Secured({"ROLE_USER", "ROLE_ADMIN"})
     @Operation(summary = "List all cities (paginated)")
     public PagedModel<CityDto> getCities(@RequestParam(defaultValue = "0")
                                          @Min(value = 0, message = "Page index must not be negative.") int page,
@@ -75,6 +77,7 @@ public class CityController {
      * @throws NotFoundException if no city has this id
      */
     @GetMapping("/{id}")
+    @Secured({"ROLE_USER", "ROLE_ADMIN"})
     @Operation(summary = "Get a city by id")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "City found"),
@@ -92,6 +95,7 @@ public class CityController {
      * @throws NotFoundException if no city has this name
      */
     @GetMapping("/search/name/{name}")
+    @Secured({"ROLE_USER", "ROLE_ADMIN"})
     @Operation(summary = "Get a city by exact name")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "City found"),
@@ -107,6 +111,7 @@ public class CityController {
      * @return cities whose name starts with {@code prefix} (empty list if none)
      */
     @GetMapping("/search/startswith/{prefix}")
+    @Secured({"ROLE_USER", "ROLE_ADMIN"})
     @Operation(summary = "List cities whose name starts with a prefix")
     @ApiResponse(responseCode = "200", description = "Matching cities (empty list if none matched)")
     public List<CityDto> searchByNameStartingWith(@Parameter(description = "Name prefix") @PathVariable String prefix) {
@@ -118,6 +123,7 @@ public class CityController {
      * @return cities more populated than {@code min} (empty list if none)
      */
     @GetMapping("/search/population/greater/{min}")
+    @Secured({"ROLE_USER", "ROLE_ADMIN"})
     @Operation(summary = "List cities with a population greater than a threshold")
     @ApiResponse(responseCode = "200", description = "Matching cities (empty list if none matched)")
     public List<CityDto> searchByPopulationGreaterThan(@Parameter(description = "Exclusive lower bound") @PathVariable
@@ -132,6 +138,7 @@ public class CityController {
      *         (empty list if none)
      */
     @GetMapping("/search/population/between/{min}/{max}")
+    @Secured({"ROLE_USER", "ROLE_ADMIN"})
     @Operation(summary = "List cities with a population within a range")
     @ApiResponse(responseCode = "200", description = "Matching cities (empty list if none matched)")
     public List<CityDto> searchByPopulationBetween(@Parameter(description = "Exclusive lower bound") @PathVariable
@@ -148,6 +155,7 @@ public class CityController {
      *         (empty list if the department has no city)
      */
     @GetMapping("/search/department/{departmentId}/largest/{n}")
+    @Secured({"ROLE_USER", "ROLE_ADMIN"})
     @Operation(summary = "List the N most populated cities of a department")
     @ApiResponse(responseCode = "200", description = "Matching cities (empty list if the department has no city)")
     public List<CityDto> getLargestCitiesOfDepartment(@Parameter(description = "Department id") @PathVariable
@@ -164,6 +172,7 @@ public class CityController {
      * @return the matching cities of the department (empty list if none)
      */
     @GetMapping("/search/department/{departmentId}/population/between/{min}/{max}")
+    @Secured({"ROLE_USER", "ROLE_ADMIN"})
     @Operation(summary = "List cities of a department with a population within a range")
     @ApiResponse(responseCode = "200", description = "Matching cities (empty list if none matched)")
     public List<CityDto> searchByPopulationBetweenInDepartment(@Parameter(description = "Department id") @PathVariable
@@ -182,6 +191,7 @@ public class CityController {
      *         ordered by descending population (empty list if none)
      */
     @GetMapping("/search/department/{departmentId}/population/greater/{min}")
+    @Secured({"ROLE_USER", "ROLE_ADMIN"})
     @Operation(summary = "List cities of a department with a population greater than a threshold")
     @ApiResponse(responseCode = "200", description = "Matching cities (empty list if none matched)")
     public List<CityDto> searchByPopulationGreaterThanInDepartment(@Parameter(description = "Department id") @PathVariable
@@ -200,6 +210,7 @@ public class CityController {
      * @throws IOException if the response cannot be written
      */
     @GetMapping("/export/csv/{min}")
+    @Secured({"ROLE_USER", "ROLE_ADMIN"})
     @Operation(summary = "Export cities more populated than a threshold as a CSV file")
     @ApiResponse(responseCode = "200", description = "CSV file (text/csv) streamed as an attachment")
     public void exportCitiesAboveThreshold(@Parameter(description = "Exclusive lower bound on population") @PathVariable int min,
@@ -232,6 +243,7 @@ public class CityController {
      * @throws FunctionalException if the department cannot be resolved or the city already exists
      */
     @PostMapping
+    @Secured({"ROLE_ADMIN"})
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a city")
     @ApiResponses({
@@ -252,6 +264,7 @@ public class CityController {
      * @throws NotFoundException   if no city has this id
      */
     @PutMapping("/{id}")
+    @Secured({"ROLE_ADMIN"})
     @Operation(summary = "Update a city")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "City updated"),
@@ -272,6 +285,7 @@ public class CityController {
      * @throws NotFoundException if no city has this id
      */
     @DeleteMapping("/{id}")
+    @Secured({"ROLE_ADMIN"})
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete a city")
     @ApiResponses({

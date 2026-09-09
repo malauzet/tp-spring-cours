@@ -6,9 +6,11 @@ import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSourceResolvable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -193,6 +195,28 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleUnexpected(Exception ex, HttpServletRequest req) {
         log.error("Unhandled exception on {} {}", req.getMethod(), req.getRequestURI(), ex);
         return build(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.", req);
+    }
+
+    /**
+     * @param ex  the access-denied exception (raised by @Secured / @PreAuthorize
+     *            when the authenticated user lacks the required role)
+     * @param req current request
+     * @return {@code 403} with a generic message
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex, HttpServletRequest req) {
+        return build(HttpStatus.FORBIDDEN, "You do not have permission to perform this action.", req);
+    }
+
+    /**
+     * @param ex  the constraint-violation exception (e.g. deleting a department
+     *            that still has cities attached to it via a foreign key)
+     * @param req current request
+     * @return {@code 409} with a generic message
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiError> handleDataIntegrityViolation(DataIntegrityViolationException ex, HttpServletRequest req) {
+        return build(HttpStatus.CONFLICT, "This resource cannot be deleted because it is still referenced by other data.", req);
     }
 
     private ResponseEntity<ApiError> build(HttpStatus status, String message, HttpServletRequest req) {

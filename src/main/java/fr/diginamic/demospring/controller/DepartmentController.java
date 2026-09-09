@@ -35,6 +35,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -88,6 +89,7 @@ public class DepartmentController {
      * @return every department
      */
     @GetMapping
+    @Secured({"ROLE_USER", "ROLE_ADMIN"})
     @Operation(summary = "List all departments")
     public List<DepartmentDto> getDepartments() {
         return departmentService.getDepartments();
@@ -99,6 +101,7 @@ public class DepartmentController {
      * @throws NotFoundException if no department has this id
      */
     @GetMapping("/{id}")
+    @Secured({"ROLE_USER", "ROLE_ADMIN"})
     @Operation(summary = "Get a department by id")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Department found"),
@@ -122,6 +125,7 @@ public class DepartmentController {
      * @throws FunctionalException if no department has this code
      */
     @GetMapping("/{code}/export/pdf")
+    @Secured({"ROLE_USER", "ROLE_ADMIN"})
     @Operation(summary = "Export a department and its cities as a PDF file")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "PDF file (application/pdf) streamed as an attachment"),
@@ -393,6 +397,7 @@ public class DepartmentController {
      * @throws FunctionalException if a department with the same code already exists
      */
     @PostMapping
+    @Secured({"ROLE_ADMIN"})
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a department")
     @ApiResponses({
@@ -412,6 +417,7 @@ public class DepartmentController {
      * @throws NotFoundException if no department has this id
      */
     @PutMapping("/{id}")
+    @Secured({"ROLE_ADMIN"})
     @Operation(summary = "Update a department")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Department updated"),
@@ -432,6 +438,7 @@ public class DepartmentController {
      * @throws NotFoundException if no department has this id
      */
     @DeleteMapping("/{id}")
+    @Secured({"ROLE_ADMIN"})
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete a department")
     @ApiResponses({
